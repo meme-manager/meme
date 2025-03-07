@@ -1,0 +1,68 @@
+{
+    "name": "meme-manager",
+    "version": "1.0.0",
+    "description": "跨平台表情包管理工具",
+    "main": "./dist/main/index.cjs",
+    "scripts": {
+        "dev": "electron-rebuild && vite",
+        "electron": "wait-on tcp:5173 && electron .",
+        "dev:electron": "concurrently \"yarn dev\" \"yarn electron\"",
+        "start": "electron .",
+        "build": "vite build && electron-builder",
+        "preview": "vite preview",
+        "check": "svelte-check --tsconfig ./tsconfig.json",
+        "postinstall": "electron-builder install-app-deps"
+    },
+    "dependencies": {
+        "electron-store": "^8.1.0",
+        "node-fetch": "^3.3.2",
+        "pg-hstore": "^2.3.4",
+        "sequelize": "^6.35.2",
+        "sequelize-electron": "^1.0.2",
+        "sqlite3": "^5.1.7"
+    },
+    "devDependencies": {
+        "@rollup/plugin-commonjs": "^28.0.3",
+        "@sveltejs/vite-plugin-svelte": "^3.0.1",
+        "@types/node": "^20.11.16",
+        "@types/sequelize": "^4.28.20",
+        "concurrently": "^9.1.2",
+        "electron": "^28.2.0",
+        "electron-builder": "^24.9.1",
+        "electron-rebuild": "^3.2.9",
+        "electron-vite": "^2.0.0",
+        "svelte": "^4.2.10",
+        "typescript": "^5.3.3",
+        "vite": "^5.0.12",
+        "vite-plugin-electron": "^0.28.0",
+        "wait-on": "^8.0.2"
+    },
+    "build": {
+        "appId": "com.meme.manager",
+        "asar": true,
+        "directories": {
+            "output": "release/${version}"
+        },
+        "files": [
+            "dist/**/*",
+            "package.json"
+        ],
+        "mac": {
+            "artifactName": "${productName}_${version}.${ext}",
+            "target": [
+                "dmg"
+            ]
+        },
+        "win": {
+            "target": [
+                {
+                    "target": "nsis",
+                    "arch": [
+                        "x64"
+                    ]
+                }
+            ],
+            "artifactName": "${productName}_${version}.${ext}"
+        }
+    }
+}

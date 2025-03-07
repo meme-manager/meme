@@ -1,0 +1,24 @@
+meme-manager/
+├── src/
+│   ├── main/
+│   │   ├── index.ts
+│   │   ├── preload.ts
+│   │   └── services/
+│   │       └── meme-service.ts
+│   ├── renderer/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── styles/
+│   │   │   └── global.css
+│   │   ├── App.svelte
+│   │   ├── index.html
+│   │   └── main.ts
+│   ├── models/
+│   │   └── database.ts
+│   └── types/
+│       └── electron.d.ts
+├── vite.config.mjs
+├── svelte.config.mjs
+├── tsconfig.json
+├── tsconfig.node.json
+└── package.json 
