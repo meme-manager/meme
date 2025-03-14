@@ -1,8 +1,12 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QListWidget, QLineEdit, QPushButton
+from PyQt5.QtCore import Qt, pyqtSignal
 
 class KeywordEditor(QWidget):
+    keywordsChanged = pyqtSignal(list)
+    
     def __init__(self):
         super().__init__()
+        self.keywords = []
         self.init_ui()
         
     def init_ui(self):
@@ -34,8 +38,20 @@ class KeywordEditor(QWidget):
         keyword = self.keyword_input.text().strip()
         if keyword and not self.keyword_list.findItems(keyword, Qt.MatchExactly):
             self.keyword_list.addItem(keyword)
+            self.keywords.append(keyword)
             self.keyword_input.clear()
+            self.keywordsChanged.emit(self.keywords)
     
     def delete_keyword(self):
         for item in self.keyword_list.selectedItems():
+            keyword = item.text()
             self.keyword_list.takeItem(self.keyword_list.row(item))
+            if keyword in self.keywords:
+                self.keywords.remove(keyword)
+        self.keywordsChanged.emit(self.keywords)
+    
+    def set_keywords(self, keywords):
+        self.keywords = keywords.copy()
+        self.keyword_list.clear()
+        for keyword in self.keywords:
+            self.keyword_list.addItem(keyword)
