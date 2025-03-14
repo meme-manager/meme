@@ -3,10 +3,14 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QSplitter, QTabWidget, QFormLayout, QLineEdit, QTextEdit
 from keyword_editor import KeywordEditor
+from storage import Storage
+import os
 
 class MemeGrid(QWidget):
     def __init__(self):
         super().__init__()
+        self.storage = Storage()
+        self.current_meme = None
         self.init_ui()
 
     def init_ui(self):
@@ -77,14 +81,15 @@ class MemeGrid(QWidget):
             if not self.is_valid_image(file_path):
                 continue
                 
-            # 生成缩略图并添加到网格
-            self.add_meme_to_grid(file_path)
+            # 导入表情包并添加到网格
+            meme = self.storage.import_meme(file_path)
+            self.add_meme_to_grid(meme)
     
     def is_valid_image(self, file_path):
         valid_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
         return any(file_path.lower().endswith(ext) for ext in valid_extensions)
     
-    def add_meme_to_grid(self, file_path):
+    def add_meme_to_grid(self, meme):
         # 计算新项目的位置
         total_items = self.grid.count()
         max_columns = 4
@@ -94,27 +99,34 @@ class MemeGrid(QWidget):
         # 创建缩略图
         thumbnail = QLabel()
         thumbnail.setFixedSize(150, 150)
-        pixmap = QPixmap(file_path)
+        pixmap = QPixmap(meme.path)
         scaled_pixmap = pixmap.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         thumbnail.setPixmap(scaled_pixmap)
         thumbnail.setAlignment(Qt.AlignCenter)
-        thumbnail.mousePressEvent = lambda e: self.show_preview(file_path)
+        thumbnail.mousePressEvent = lambda e: self.show_preview(meme)
         
         # 添加到网格
         self.grid.addWidget(thumbnail, row, col)
     
-    def show_preview(self, file_path):
+    def show_preview(self, meme):
+        self.current_meme = meme
         preview_window = QWidget()
         preview_window.setWindowTitle('预览')
         preview_window.setGeometry(100, 100, 800, 600)
         
         layout = QVBoxLayout()
         preview_label = QLabel()
-        pixmap = QPixmap(file_path)
+        pixmap = QPixmap(meme.path)
         preview_label.setPixmap(pixmap.scaled(780, 580, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         preview_label.setAlignment(Qt.AlignCenter)
         
+        # 显示关键词
+        keywords = self.storage.get_meme_keywords(meme.id)
+        keyword_text = '关键词: ' + ', '.join([k.word for k in keywords])
+        keyword_label = QLabel(keyword_text)
+        
         layout.addWidget(preview_label)
+        layout.addWidget(keyword_label)
         preview_window.setLayout(layout)
         preview_window.show()
 
