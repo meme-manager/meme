@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QScrollArea, QVBoxLayout, QHBoxLayout
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import Qt, QUrl
+from PyQt5.QtGui import QPixmap, QMovie
+from PyQt5.QtCore import Qt, QUrl, QSize
 from PyQt5.QtWidgets import QSplitter, QTabWidget, QFormLayout, QLineEdit, QTextEdit
 from keyword_editor import KeywordEditor
 from storage import Storage
@@ -125,9 +125,20 @@ class MemeGrid(QWidget):
         # 创建缩略图
         thumbnail = QLabel()
         thumbnail.setFixedSize(150, 150)
-        pixmap = QPixmap(meme.path)
-        scaled_pixmap = pixmap.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        thumbnail.setPixmap(scaled_pixmap)
+        
+        # 根据图片类型选择不同的显示方式
+        if meme.type == 'animated':
+            movie = QMovie(meme.path)
+            movie.setScaledSize(QSize(150, 150))
+            thumbnail.setMovie(movie)
+            movie.start()
+            # 保存movie引用防止被垃圾回收
+            thumbnail.movie = movie
+        else:
+            pixmap = QPixmap(meme.path)
+            scaled_pixmap = pixmap.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            thumbnail.setPixmap(scaled_pixmap)
+            
         thumbnail.setAlignment(Qt.AlignCenter)
         thumbnail.mousePressEvent = lambda e: self.show_preview(meme)
         
@@ -162,10 +173,20 @@ class MemeGrid(QWidget):
         
         layout = QVBoxLayout()
         preview_label = QLabel()
-        pixmap = QPixmap(meme.path)
-        preview_label.setPixmap(pixmap.scaled(780, 580, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        preview_label.setAlignment(Qt.AlignCenter)
         
+        # 根据图片类型选择不同的预览方式
+        if meme.type == 'animated':
+            movie = QMovie(meme.path)
+            movie.setScaledSize(QPixmap(meme.path).scaled(780, 580, Qt.KeepAspectRatio, Qt.SmoothTransformation).size())
+            preview_label.setMovie(movie)
+            movie.start()
+            # 保存movie引用防止被垃圾回收
+            preview_label.movie = movie
+        else:
+            pixmap = QPixmap(meme.path)
+            preview_label.setPixmap(pixmap.scaled(780, 580, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        
+        preview_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(preview_label)
         preview_window.setLayout(layout)
         preview_window.show()

@@ -24,12 +24,16 @@ class Storage:
             source: 文件路径或URL
             source_type: 'file'表示本地文件，'url'表示网络图片
         """
+        # 获取文件扩展名
         if source_type == 'url':
             if not NetworkUtils.is_valid_image_url(source):
                 return None
             file_path = NetworkUtils.download_image(source, self.storage_dir)
             if not file_path:
                 return None
+            file_ext = os.path.splitext(source)[1]
+            if not file_ext:  # 如果URL中没有扩展名，尝试从下载的文件中获取
+                file_ext = os.path.splitext(file_path)[1]
             new_path = file_path
         else:
             # 生成唯一文件名
