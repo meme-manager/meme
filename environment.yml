@@ -1,0 +1,9 @@
+name: meme-manager
+channels:
+  - defaults
+dependencies:
+  - python=3.8
+  - pyqt=5.15
+  - pip
+  - pip:
+    - pyqt5-sip
