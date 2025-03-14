@@ -4,6 +4,7 @@ from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Base, Meme, Keyword
+from network_utils import NetworkUtils
 
 class Storage:
     def __init__(self, db_path='memes.db', storage_dir='resources'):
@@ -16,15 +17,28 @@ class Storage:
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
     
-    def import_meme(self, file_path, source=None):
-        """导入表情包文件到存储目录并创建数据库记录"""
-        # 生成唯一文件名
-        file_ext = os.path.splitext(file_path)[1]
-        new_filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}{file_ext}"
-        new_path = os.path.join(self.storage_dir, new_filename)
+    def import_meme(self, source, source_type='file'):
+        """导入表情包文件到存储目录并创建数据库记录
         
-        # 复制文件到存储目录
-        shutil.copy2(file_path, new_path)
+        Args:
+            source: 文件路径或URL
+            source_type: 'file'表示本地文件，'url'表示网络图片
+        """
+        if source_type == 'url':
+            if not NetworkUtils.is_valid_image_url(source):
+                return None
+            file_path = NetworkUtils.download_image(source, self.storage_dir)
+            if not file_path:
+                return None
+            new_path = file_path
+        else:
+            # 生成唯一文件名
+            file_ext = os.path.splitext(source)[1]
+            new_filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}{file_ext}"
+            new_path = os.path.join(self.storage_dir, new_filename)
+            
+            # 复制文件到存储目录
+            shutil.copy2(source, new_path)
         
         # 创建数据库记录
         meme = Meme(
@@ -54,9 +68,44 @@ class Storage:
             self.session.commit()
     
     def search_by_keyword(self, word):
-        """根据关键词搜索表情包"""
-        keyword = self.session.query(Keyword).filter_by(word=word).first()
-        return keyword.memes if keyword else []
+        """根据关键词搜索表情包，支持模糊匹配
+        
+        Args:
+            word: 搜索关键词
+        Returns:
+            按相关度排序的表情包列表
+        """
+        if not word:
+            return []
+            
+        # 模糊匹配关键词
+        keywords = self.session.query(Keyword).filter(
+            Keyword.word.like(f'%{word}%')
+        ).all()
+        
+        # 收集所有匹配的表情包
+        meme_scores = {}
+        for keyword in keywords:
+            for meme in keyword.memes:
+                if meme.id not in meme_scores:
+                    meme_scores[meme.id] = {
+                        'meme': meme,
+                        'score': 0,
+                        'matched_keywords': []
+                    }
+                # 计算相关度分数
+                similarity = len(word) / len(keyword.word) if len(keyword.word) >= len(word) else len(keyword.word) / len(word)
+                meme_scores[meme.id]['score'] += similarity
+                meme_scores[meme.id]['matched_keywords'].append(keyword.word)
+        
+        # 按相关度分数排序
+        sorted_memes = sorted(
+            meme_scores.values(),
+            key=lambda x: x['score'],
+            reverse=True
+        )
+        
+        return [item['meme'] for item in sorted_memes]
     
     def get_all_memes(self):
         """获取所有表情包"""

@@ -1,9 +1,10 @@
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QScrollArea, QVBoxLayout, QHBoxLayout
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtWidgets import QSplitter, QTabWidget, QFormLayout, QLineEdit, QTextEdit
 from keyword_editor import KeywordEditor
 from storage import Storage
+from network_utils import NetworkUtils
 import os
 
 class MemeGrid(QWidget):
@@ -26,14 +27,8 @@ class MemeGrid(QWidget):
         self.grid = QGridLayout(content_widget)
         self.grid.setSpacing(10)
         
-        # 示例数据（后续替换为真实数据）
-        self.demo_data = [
-            {'path': 'demo1.jpg', 'keywords': ['开心', '庆祝']},
-            {'path': 'demo2.png', 'keywords': ['无奈', '吐槽']}
-        ]
-        
-        # 添加示例表情包
-        self.load_demo_items()
+        # 加载已有表情包
+        self.load_memes()
         
         scroll.setWidget(content_widget)
         # 右侧详情面板
@@ -43,17 +38,20 @@ class MemeGrid(QWidget):
         # 基本信息标签页
         basic_info = QWidget()
         form_layout = QFormLayout()
-        form_layout.addRow('文件名:', QLineEdit())
-        form_layout.addRow('添加时间:', QLineEdit())
+        self.file_name_input = QLineEdit()
+        self.file_name_input.setReadOnly(True)
+        self.create_time_input = QLineEdit()
+        self.create_time_input.setReadOnly(True)
+        form_layout.addRow('文件名:', self.file_name_input)
+        form_layout.addRow('添加时间:', self.create_time_input)
         basic_info.setLayout(form_layout)
         
-        # 替换关键词标签页
-        keyword_tab = KeywordEditor()
-        keyword_tab.setLayout(QVBoxLayout())
-        keyword_tab.layout().addWidget(QLabel('关键词编辑区域'))
+        # 关键词编辑标签页
+        self.keyword_editor = KeywordEditor()
+        self.keyword_editor.keywordsChanged.connect(self.update_meme_keywords)
         
         tab_widget.addTab(basic_info, '基本信息')
-        tab_widget.addTab(keyword_tab, '关键词')
+        tab_widget.addTab(self.keyword_editor, '关键词')
         
         detail_panel.setLayout(QVBoxLayout())
         detail_panel.layout().addWidget(tab_widget)
@@ -65,25 +63,53 @@ class MemeGrid(QWidget):
         self.main_layout = QVBoxLayout()
         self.main_layout.addWidget(splitter)
         self.setLayout(self.main_layout)
-        self.main_layout.addWidget(scroll)
         
         # 启用拖拽支持
         self.setAcceptDrops(True)
         
     def dragEnterEvent(self, event):
-        if event.mimeData().hasUrls():
+        mime_data = event.mimeData()
+        if mime_data.hasUrls() or mime_data.hasText() or mime_data.hasImage():
             event.acceptProposedAction()
 
     def dropEvent(self, event):
-        for url in event.mimeData().urls():
-            file_path = url.toLocalFile()
-            # 验证文件类型
-            if not self.is_valid_image(file_path):
-                continue
-                
-            # 导入表情包并添加到网格
-            meme = self.storage.import_meme(file_path)
-            self.add_meme_to_grid(meme)
+        mime_data = event.mimeData()
+        
+        # 处理URL列表
+        if mime_data.hasUrls():
+            for url in mime_data.urls():
+                if url.isLocalFile():
+                    file_path = url.toLocalFile()
+                    if self.is_valid_image(file_path):
+                        meme = self.storage.import_meme(file_path)
+                        if meme:
+                            self.add_meme_to_grid(meme)
+                else:
+                    url_str = url.toString()
+                    if NetworkUtils.is_valid_image_url(url_str):
+                        meme = self.storage.import_meme(url_str, source_type='url')
+                        if meme:
+                            self.add_meme_to_grid(meme)
+        
+        # 处理文本中的URL
+        elif mime_data.hasText():
+            text = mime_data.text()
+            if NetworkUtils.is_valid_image_url(text):
+                meme = self.storage.import_meme(text, source_type='url')
+                if meme:
+                    self.add_meme_to_grid(meme)
+        
+        # 处理剪贴板图片
+        elif mime_data.hasImage():
+            image = mime_data.imageData()
+            if image:
+                # 保存临时文件
+                temp_path = os.path.join(self.storage.storage_dir, 'temp.png')
+                image.save(temp_path, 'PNG')
+                meme = self.storage.import_meme(temp_path)
+                if meme:
+                    self.add_meme_to_grid(meme)
+                os.remove(temp_path)
     
     def is_valid_image(self, file_path):
         valid_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
@@ -107,9 +133,29 @@ class MemeGrid(QWidget):
         
         # 添加到网格
         self.grid.addWidget(thumbnail, row, col)
+        
+    def update_meme_keywords(self, keywords):
+        if self.current_meme:
+            # 清除原有关键词
+            self.current_meme.keywords.clear()
+            
+            # 添加新关键词
+            for word in keywords:
+                keyword = self.storage.add_keyword(word)
+                self.storage.link_meme_keyword(self.current_meme.id, keyword.id)
     
     def show_preview(self, meme):
         self.current_meme = meme
+        
+        # 更新基本信息
+        self.file_name_input.setText(os.path.basename(meme.path))
+        self.create_time_input.setText(meme.create_time.strftime('%Y-%m-%d %H:%M:%S'))
+        
+        # 更新关键词
+        keywords = self.storage.get_meme_keywords(meme.id)
+        self.keyword_editor.set_keywords([k.word for k in keywords])
+        
+        # 显示预览窗口
         preview_window = QWidget()
         preview_window.setWindowTitle('预览')
         preview_window.setGeometry(100, 100, 800, 600)
@@ -120,27 +166,32 @@ class MemeGrid(QWidget):
         preview_label.setPixmap(pixmap.scaled(780, 580, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         preview_label.setAlignment(Qt.AlignCenter)
         
-        # 显示关键词
-        keywords = self.storage.get_meme_keywords(meme.id)
-        keyword_text = '关键词: ' + ', '.join([k.word for k in keywords])
-        keyword_label = QLabel(keyword_text)
-        
         layout.addWidget(preview_label)
-        layout.addWidget(keyword_label)
         preview_window.setLayout(layout)
         preview_window.show()
 
-    def load_demo_items(self):
-        row, col = 0, 0
-        max_columns = 4
-        
-        for item in self.demo_data:
-            thumbnail = QLabel()
-            thumbnail.setPixmap(QPixmap(item['path']).scaled(150, 150, Qt.KeepAspectRatio))
-            thumbnail.setAlignment(Qt.AlignCenter)
+    def load_memes(self):
+        """加载所有表情包"""
+        self.clear_grid()
+        memes = self.storage.get_all_memes()
+        for meme in memes:
+            self.add_meme_to_grid(meme)
             
-            self.grid.addWidget(thumbnail, row, col)
-            col += 1
-            if col >= max_columns:
-                col = 0
-                row += 1
+    def clear_grid(self):
+        """清空网格布局"""
+        while self.grid.count():
+            item = self.grid.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+                
+    def update_search_results(self, keyword):
+        """更新搜索结果"""
+        self.clear_grid()
+        if not keyword:
+            self.load_memes()
+            return
+            
+        # 搜索表情包
+        memes = self.storage.search_by_keyword(keyword)
+        for meme in memes:
+            self.add_meme_to_grid(meme)
