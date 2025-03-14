@@ -26,6 +26,15 @@
 - **requests**: 网络请求处理
 - **Pillow**: 图像处理库
 - **python-magic**: 文件类型验证
+- **conda**: 包和环境管理工具
+  - 环境创建: `conda create -n meme-manager python=3.8`
+  - 依赖安装: `conda env update -f environment.yml`
+  - 环境激活: `conda activate meme-manager`
+  - 配置文件: environment.yml 包含以下规范：
+    - 指定基础环境名称
+    - 配置conda和pip渠道
+    - 明确Python基础版本
+    - 分层次管理核心依赖和开发依赖
 
 ## 3. 系统架构
 
