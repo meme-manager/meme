@@ -4,8 +4,9 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QVBoxLayout, QHB
 from meme_grid import MemeGrid
 from settings import Settings, SettingsDialog
 from PyQt5.QtCore import QTimer, Qt
-from PyQt5.QtGui import QKeySequence
+from PyQt5.QtGui import QKeySequence, QIcon
 from network_utils import NetworkUtils
+from style import Style
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -14,6 +15,15 @@ class MainWindow(QMainWindow):
         self.search_timer = QTimer()
         self.search_timer.setSingleShot(True)
         self.search_timer.timeout.connect(self.perform_search)
+        
+        # 应用主题
+        theme = self.settings.get_theme()
+        if theme == 'dark':
+            QApplication.instance().setPalette(Style.get_dark_palette())
+        else:
+            QApplication.instance().setPalette(Style.get_light_palette())
+        QApplication.instance().setStyleSheet(Style.get_style_sheet(theme))
+        
         self.init_ui()
         
         # 添加剪贴板粘贴快捷键
@@ -32,14 +42,27 @@ class MainWindow(QMainWindow):
         
         # 顶部操作栏
         top_bar = QHBoxLayout()
+        top_bar.setContentsMargins(10, 10, 10, 10)
+        top_bar.setSpacing(10)
+        
+        # 搜索框
         self.search_input = QLineEdit(placeholderText='输入关键词搜索')
+        self.search_input.setMinimumHeight(36)
         self.search_input.textChanged.connect(self.on_search)
+        
+        # 按钮组
         self.import_btn = QPushButton('导入表情包')
+        self.import_btn.setIcon(QIcon.fromTheme('document-open'))
         self.import_btn.clicked.connect(self.import_memes)
+        
         self.import_url_btn = QPushButton('导入链接')
+        self.import_url_btn.setIcon(QIcon.fromTheme('insert-link'))
         self.import_url_btn.clicked.connect(self.import_from_url)
+        
         self.settings_btn = QPushButton('设置')
+        self.settings_btn.setIcon(QIcon.fromTheme('preferences-system'))
         self.settings_btn.clicked.connect(self.show_settings)
+        
         top_bar.addWidget(self.search_input, stretch=4)
         top_bar.addWidget(self.import_btn, stretch=1)
         top_bar.addWidget(self.import_url_btn, stretch=1)
