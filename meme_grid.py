@@ -185,6 +185,9 @@ class MemeGrid(QWidget):
         super().__init__(parent)
         self.storage = Storage()
         self.init_ui()
+    
+    def showEvent(self, event):
+        super().showEvent(event)
         self.load_memes()
     
     def init_ui(self):
@@ -203,8 +206,12 @@ class MemeGrid(QWidget):
         self.grid_container = QWidget()
         # 设置浅灰色背景
         self.grid_container.setStyleSheet("background-color: #f0f0f0; border-radius: 8px;")
+        # 设置网格容器的大小策略
+        self.grid_container.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         self.grid_layout = QGridLayout(self.grid_container)
         self.grid_layout.setSpacing(30)  # 设置表情之间的间距为30px
+        self.grid_layout.setAlignment(Qt.AlignTop | Qt.AlignHCenter)  # 设置网格顶部对齐和水平居中
+        self.grid_layout.setContentsMargins(15, 15, 15, 15)  # 设置网格边距
         
         # 设置滚动区域内容
         self.scroll_area.setWidget(self.grid_container)
@@ -226,9 +233,8 @@ class MemeGrid(QWidget):
         self.timer.start(100)
         super().resizeEvent(event)
     
-    def adjust_grid(self):
-        """调整网格布局，确保表情包之间始终保持30px的间距"""
-        # 计算每个表情包的大小和每行可显示的数量
+    def calculate_grid_layout(self):
+        """计算网格布局参数"""
         grid_width = self.grid_container.width()
         min_spacing = 30  # 最小间距为30px
         min_item_size = 80  # 最小表情包尺寸
@@ -242,6 +248,12 @@ class MemeGrid(QWidget):
         available_width = grid_width - (cols-1) * min_spacing
         # 确保表情包大小不超过可用宽度的1/cols，同时不小于最小尺寸，不大于最大尺寸
         item_width = min(max_item_size, max(min_item_size, min(available_width // cols, grid_width // cols)))
+        
+        return cols, item_width, min_spacing
+    
+    def adjust_grid(self):
+        """调整网格布局，确保表情包之间始终保持30px的间距"""
+        _, item_width, _ = self.calculate_grid_layout()
         
         # 更新所有表情包标签的大小
         for i in range(self.grid_layout.count()):
@@ -258,6 +270,7 @@ class MemeGrid(QWidget):
         from models import Meme
         memes = self.storage.session.query(Meme).all()
         self.display_memes(memes)
+
     
     def update_search_results(self, keyword):
         """更新搜索结果"""
@@ -276,20 +289,14 @@ class MemeGrid(QWidget):
     
     def display_memes(self, memes):
         """在网格中显示表情包"""
-        # 计算每行显示的数量
-        grid_width = self.grid_container.width()
-        min_spacing = 30  # 最小间距为30px
-        min_item_size = 80  # 最小表情包尺寸
-        max_item_size = 150  # 最大表情包尺寸
+        # 计算布局参数
+        cols, item_width, min_spacing = self.calculate_grid_layout()
         
-        # 动态计算每行可以显示的表情包数量，确保间距至少为30px
-        # 公式: cols = (grid_width + min_spacing) / (min_item_size + min_spacing)
-        cols = max(1, int((grid_width + min_spacing) / (min_item_size + min_spacing)))
-        
-        # 根据列数计算表情包大小，确保间距为30px
-        available_width = grid_width - (cols-1) * min_spacing
-        # 确保表情包大小不超过可用宽度的1/cols，同时不小于最小尺寸，不大于最大尺寸
-        item_width = min(max_item_size, max(min_item_size, min(available_width // cols, grid_width // cols)))
+        # 清除现有的表情包
+        while self.grid_layout.count():
+            item = self.grid_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
         
         # 添加表情包到网格
         for i, meme in enumerate(memes):
@@ -302,7 +309,12 @@ class MemeGrid(QWidget):
             meme_label.clicked.connect(self.show_meme_detail)
             
             # 添加到网格
-            self.grid_layout.addWidget(meme_label, row, col)
+            self.grid_layout.addWidget(meme_label, row, col, Qt.AlignCenter)
+        
+        # 更新网格容器的最小大小
+        total_rows = (len(memes) + cols - 1) // cols
+        min_height = total_rows * (item_width + min_spacing) + min_spacing
+        self.grid_container.setMinimumHeight(min_height)
     
     def clear_grid(self):
         """清空网格"""

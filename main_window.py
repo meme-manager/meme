@@ -7,6 +7,7 @@ from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QKeySequence, QIcon
 from network_utils import NetworkUtils
 from style import Style
+from toast import Toast
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -15,6 +16,9 @@ class MainWindow(QMainWindow):
         self.search_timer = QTimer()
         self.search_timer.setSingleShot(True)
         self.search_timer.timeout.connect(self.perform_search)
+        
+        # 创建Toast实例
+        self.toast = Toast(self)
         
         # 应用主题
         theme = self.settings.get_theme()
@@ -29,7 +33,9 @@ class MainWindow(QMainWindow):
         # 添加剪贴板粘贴快捷键
         self.shortcut = QShortcut(QKeySequence("Ctrl+V"), self)
         self.shortcut.activated.connect(self.handle_clipboard_change)
-        QApplication.instance().clipboard().dataChanged.connect(self.handle_clipboard_change)
+        # 添加Command+V快捷键（macOS）
+        self.shortcut_mac = QShortcut(QKeySequence("Meta+V"), self)
+        self.shortcut_mac.activated.connect(self.handle_clipboard_change)
         
     def init_ui(self):
         self.setWindowTitle('表情包管理工具')
@@ -138,9 +144,9 @@ class MainWindow(QMainWindow):
                 if meme:
                     self.meme_grid.load_memes()
                 os.remove(temp_path)
-                QMessageBox.information(self, '成功', '已成功从剪贴板导入图片')
+                self.toast.showMessage('已成功从剪贴板导入图片')
             else:
-                QMessageBox.warning(self, '错误', '剪贴板中的图片数据无效')
+                self.toast.showMessage('剪贴板中的图片数据无效')
 
 
 if __name__ == '__main__':
