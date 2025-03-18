@@ -27,6 +27,35 @@ class MemeLabel(QLabel):
         # 悬浮预览
         self.preview_label = None
         
+        # 选中状态
+        self.is_selected = False
+        self.setStyleSheet("")
+        
+    def set_selected(self, selected):
+        """设置选中状态"""
+        self.is_selected = selected
+        current_style = self.styleSheet()
+        print(f"[DEBUG] 当前样式表: {current_style}")
+        print(f"[DEBUG] 设置选中状态: {selected}")
+        
+        if selected:
+            # 保留现有样式，添加边框样式
+            border_style = "border: 2px solid #1e90ff; border-radius: 5px;"
+            if current_style:
+                new_style = current_style + border_style
+                print(f"[DEBUG] 合并后的样式: {new_style}")
+                self.setStyleSheet(new_style)
+            else:
+                print(f"[DEBUG] 使用默认边框样式: {border_style}")
+                self.setStyleSheet(border_style)
+            self.update()
+        else:
+            # 移除边框样式，保留其他样式
+            new_style = current_style.replace("border: 2px solid #1e90ff; border-radius: 5px;", "").strip()
+            print(f"[DEBUG] 移除边框后的样式: {new_style}")
+            self.setStyleSheet(new_style)
+            self.update()
+        
     def load_meme(self):
         """加载表情包图像"""
         if self.meme.type == 'animated':
@@ -63,7 +92,11 @@ class MemeLabel(QLabel):
     def mousePressEvent(self, event):
         """处理鼠标按下事件"""
         if event.button() == Qt.LeftButton:
+            print(f"[DEBUG] 鼠标左键按下事件触发")
+            print(f"[DEBUG] 当前选中状态: {self.is_selected}")
             self.drag_start_position = event.pos()
+            # 先设置选中状态
+            self.set_selected(True)
             # 发送点击信号
             self.clicked.emit(self.meme)
     
@@ -326,6 +359,14 @@ class MemeGrid(QWidget):
     
     def show_meme_detail(self, meme):
         """显示表情包详情"""
+        # 清除其他表情包的选中状态
+        for i in range(self.grid_layout.count()):
+            item = self.grid_layout.itemAt(i)
+            if item and item.widget():
+                # 跳过当前被点击的表情包
+                if item.widget().meme != meme and item.widget().is_selected:
+                    item.widget().set_selected(False)
+                
         if not hasattr(self, 'detail_dialog') or not self.detail_dialog:
             # 创建详情面板
             self._create_detail_dialog()
