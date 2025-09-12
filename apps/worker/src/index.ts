@@ -1,102 +1,74 @@
+/**
+ * Cloudflare Workers 主入口
+ * 实现云端索引读写 API
+ */
+
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
+import { prettyJSON } from 'hono/pretty-json';
+import { indexRouter } from './routes/index';
+import { authRouter } from './routes/auth';
+import { assetRouter } from './routes/asset';
+import { errorHandler } from './middleware/error';
+import { authMiddleware } from './middleware/auth';
+import { apiRateLimit, deviceRegistrationRateLimit } from './middleware/rateLimit';
 
-type Bindings = {
-  // DB: D1Database;
-  // R2: R2Bucket;
-  // KV: KVNamespace;
-};
+// 环境变量类型定义
+export interface Env {
+  DB: D1Database;
+  BUCKET: R2Bucket;
+  KV?: KVNamespace;
+  JWT_SECRET: string;
+  ENVIRONMENT: 'development' | 'staging' | 'production';
+}
 
-const app = new Hono<{ Bindings: Bindings }>();
+// 创建 Hono 应用
+const app = new Hono<{ Bindings: Env }>();
 
-// CORS 中间件
-app.use('*', cors());
-
-// Hello 接口 - 用于验证 Workers 正常工作
-app.get('/hello', c => {
-  return c.json({
-    message: 'Hello from Meme Manager Worker!',
-    timestamp: new Date().toISOString(),
-    version: '0.1.0',
-  });
-});
+// 全局中间件
+app.use('*', logger());
+app.use('*', prettyJSON());
+app.use('*', cors({
+  origin: ['http://localhost:3000', 'https://meme-manager.app'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization', 'X-Device-ID'],
+  credentials: true,
+}));
 
 // 健康检查
-app.get('/health', c => {
-  return c.json({ status: 'ok', service: 'meme-manager-worker' });
-});
-
-// API 路由组
-const api = new Hono<{ Bindings: Bindings }>();
-
-// 设备注册 (占位符)
-api.post('/auth/device-begin', async c => {
+app.get('/health', (c) => {
   return c.json({
-    message: 'Device registration endpoint - to be implemented',
-    deviceId: `dev_${Date.now()}`,
-    token: 'placeholder-token',
+    status: 'ok',
+    timestamp: Date.now(),
+    environment: c.env.ENVIRONMENT || 'development',
+    version: '1.0.0'
   });
 });
 
-// 索引同步 (占位符)
-api.get('/index', async c => {
-  const since = c.req.query('since') || '0';
-  const limit = c.req.query('limit') || '100';
+// 公开路由（不需要认证，但有限流）
+app.use('/api/auth/device-begin', deviceRegistrationRateLimit);
+app.route('/api/auth', authRouter);
 
-  return c.json({
-    events: [],
-    nextClock: parseInt(since) + 1,
-    message: 'Index sync endpoint - to be implemented',
-  });
-});
-
-api.post('/index/batch', async c => {
-  return c.json({
-    accepted: [],
-    conflicts: [],
-    message: 'Batch sync endpoint - to be implemented',
-  });
-});
-
-// R2 预签名上传 (占位符)
-api.post('/r2/presign-upload', async c => {
-  return c.json({
-    url: 'https://placeholder-upload-url.com',
-    headers: {},
-    key: 'placeholder-key',
-    message: 'Presign upload endpoint - to be implemented',
-  });
-});
-
-// 快照下载 (占位符)
-api.get('/snapshot/latest', async c => {
-  return c.json({
-    url: 'https://placeholder-snapshot-url.com',
-    snapshotClock: 0,
-    message: 'Snapshot endpoint - to be implemented',
-  });
-});
-
-// 资产缩略图访问 (占位符)
-api.get('/asset/:id/thumb', async c => {
-  const id = c.req.param('id');
-  return c.json({
-    message: `Thumbnail for asset ${id} - to be implemented`,
-  });
-});
-
-// 挂载 API 路由
-app.route('/api', api);
-
-// 404 处理
-app.notFound(c => {
-  return c.json({ error: 'Not Found' }, 404);
-});
+// 受保护的路由（需要认证和限流）
+app.use('/api/index/*', apiRateLimit);
+app.use('/api/asset/*', apiRateLimit);
+app.use('/api/index/*', authMiddleware);
+app.use('/api/asset/*', authMiddleware);
+app.route('/api/index', indexRouter);
+app.route('/api/asset', assetRouter);
 
 // 错误处理
-app.onError((err, c) => {
-  console.error('Worker error:', err);
-  return c.json({ error: 'Internal Server Error' }, 500);
+app.onError(errorHandler);
+
+// 404 处理
+app.notFound((c) => {
+  return c.json({
+    error: 'Not Found',
+    message: 'The requested resource was not found',
+    path: c.req.path,
+    timestamp: Date.now()
+  }, 404);
 });
 
 export default app;

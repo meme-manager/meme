@@ -23,7 +23,7 @@ RATE_LIMIT_WINDOW = "60"
 # D1 数据库绑定
 [[d1_databases]]
 binding = "DB"
-database_name = "meme-manager-db-dev"
+database_name = "meme-manager-db"
 database_id = "your_dev_d1_database_id_here"
 
 # R2 存储绑定
@@ -40,6 +40,27 @@ id = "your_dev_kv_namespace_id_here"
 # 开发环境配置
 # ===========================================
 
+[env.dev]
+name = "meme-manager-worker-dev"
+
+[env.dev.vars]
+APP_ENV = "dev"
+LOG_LEVEL = "debug"
+ENABLE_DEV_TOOLS = "true"
+
+[[env.dev.d1_databases]]
+binding = "DB"
+database_name = "meme-manager-db"
+database_id = "your_dev_d1_database_id_here"
+
+[[env.dev.r2_buckets]]
+binding = "ASSETS_BUCKET"
+bucket_name = "meme-manager-assets-dev"
+
+[[env.dev.kv_namespaces]]
+binding = "CACHE"
+id = "your_dev_kv_namespace_id_here"
+
 [env.development]
 name = "meme-manager-worker-dev"
 
@@ -50,7 +71,7 @@ ENABLE_DEV_TOOLS = "true"
 
 [[env.development.d1_databases]]
 binding = "DB"
-database_name = "meme-manager-db-dev"
+database_name = "meme-manager-db"
 database_id = "your_dev_d1_database_id_here"
 
 [[env.development.r2_buckets]]
@@ -75,7 +96,7 @@ SECURE_HEADERS = "false"
 
 [[env.staging.d1_databases]]
 binding = "DB"
-database_name = "meme-manager-db-staging"
+database_name = "meme-manager-db"
 database_id = "your_staging_d1_database_id_here"
 
 [[env.staging.r2_buckets]]
@@ -101,7 +122,7 @@ CORS_STRICT = "true"
 
 [[env.production.d1_databases]]
 binding = "DB"
-database_name = "meme-manager-db-prod"
+database_name = "meme-manager-db"
 database_id = "your_production_d1_database_id_here"
 
 [[env.production.r2_buckets]]

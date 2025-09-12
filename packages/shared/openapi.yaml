@@ -1,0 +1,1103 @@
+openapi: 3.0.3
+info:
+  title: Meme Manager API
+  description: 表情包管理工具云端同步 API
+  version: 1.0.0
+  contact:
+    name: Meme Manager Team
+  license:
+    name: MIT
+
+servers:
+  - url: https://api.meme-manager.example.com
+    description: Production server
+  - url: https://staging-api.meme-manager.example.com
+    description: Staging server
+  - url: http://localhost:8787
+    description: Development server
+
+paths:
+  /health:
+    get:
+      summary: 健康检查
+      description: 检查服务健康状态
+      operationId: getHealth
+      tags:
+        - System
+      responses:
+        '200':
+          description: 服务状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /stats:
+    get:
+      summary: 系统统计
+      description: 获取系统统计信息
+      operationId: getStats
+      tags:
+        - System
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 统计信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/device-begin:
+    post:
+      summary: 设备注册
+      description: 注册新设备并获取访问令牌
+      operationId: deviceBegin
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceBeginRequest'
+      responses:
+        '200':
+          description: 设备注册成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/DeviceBeginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /auth/device-refresh:
+    post:
+      summary: 刷新令牌
+      description: 使用刷新令牌获取新的访问令牌
+      operationId: deviceRefresh
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceRefreshRequest'
+      responses:
+        '200':
+          description: 令牌刷新成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/DeviceRefreshResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /index:
+    get:
+      summary: 拉取事件
+      description: 获取指定时钟之后的事件列表
+      operationId: getEvents
+      tags:
+        - Sync
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: since
+          in: query
+          description: 起始服务器时钟
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          description: 返回事件数量限制
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - name: deviceId
+          in: query
+          description: 过滤特定设备的事件
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: types
+          in: query
+          description: 过滤事件类型
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: 事件列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/IndexResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+    post:
+      summary: 推送事件
+      description: 批量提交本地事件到服务器
+      operationId: pushEvents
+      tags:
+        - Sync
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IndexBatchRequest'
+      responses:
+        '200':
+          description: 事件提交结果
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/IndexBatchResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: 同步冲突
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      error:
+                        allOf:
+                          - $ref: '#/components/schemas/ApiError'
+                          - type: object
+                            properties:
+                              code:
+                                enum: [SYNC_CONFLICT]
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /r2/presign-upload:
+    post:
+      summary: 预签名上传
+      description: 获取 R2 预签名上传 URL
+      operationId: presignUpload
+      tags:
+        - Storage
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PresignUploadRequest'
+      responses:
+        '200':
+          description: 预签名 URL
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PresignUploadResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          description: 文件过大
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      error:
+                        allOf:
+                          - $ref: '#/components/schemas/ApiError'
+                          - type: object
+                            properties:
+                              code:
+                                enum: [ASSET_TOO_LARGE]
+        '415':
+          description: 不支持的文件格式
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      error:
+                        allOf:
+                          - $ref: '#/components/schemas/ApiError'
+                          - type: object
+                            properties:
+                              code:
+                                enum: [UNSUPPORTED_FORMAT]
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /r2/upload-complete:
+    post:
+      summary: 上传完成通知
+      description: 通知服务器文件上传完成
+      operationId: uploadComplete
+      tags:
+        - Storage
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadCompleteRequest'
+      responses:
+        '200':
+          description: 上传完成确认
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UploadCompleteResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /asset/{id}/thumb:
+    get:
+      summary: 获取缩略图
+      description: 获取资产缩略图或原图
+      operationId: getAssetThumb
+      tags:
+        - Storage
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: 资产 ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: size
+          in: query
+          description: 图片尺寸
+          required: false
+          schema:
+            type: string
+            enum: [small, medium, original]
+            default: medium
+        - name: download
+          in: query
+          description: 是否强制下载
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: 图片数据
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        '302':
+          description: 重定向到 R2 URL
+          headers:
+            Location:
+              description: R2 对象 URL
+              schema:
+                type: string
+                format: uri
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 资产不存在
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      error:
+                        allOf:
+                          - $ref: '#/components/schemas/ApiError'
+                          - type: object
+                            properties:
+                              code:
+                                enum: [ASSET_NOT_FOUND]
+
+  /snapshot/latest:
+    get:
+      summary: 获取最新快照
+      description: 获取最新的数据库快照下载链接
+      operationId: getLatestSnapshot
+      tags:
+        - Snapshot
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: query
+          description: 用户 ID（可选）
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: includeAssets
+          in: query
+          description: 是否包含资产数据
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: 快照信息
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SnapshotLatestResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 没有可用快照
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /snapshot/create:
+    post:
+      summary: 创建快照
+      description: 创建新的数据库快照
+      operationId: createSnapshot
+      tags:
+        - Snapshot
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SnapshotCreateRequest'
+      responses:
+        '202':
+          description: 快照创建已开始
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SnapshotCreateResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 设备访问令牌
+
+  responses:
+    BadRequest:
+      description: 请求参数错误
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiResponse'
+              - type: object
+                properties:
+                  error:
+                    allOf:
+                      - $ref: '#/components/schemas/ApiError'
+                      - type: object
+                        properties:
+                          code:
+                            enum: [INVALID_REQUEST, VALIDATION_ERROR]
+
+    Unauthorized:
+      description: 未授权访问
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiResponse'
+              - type: object
+                properties:
+                  error:
+                    allOf:
+                      - $ref: '#/components/schemas/ApiError'
+                      - type: object
+                        properties:
+                          code:
+                            enum: [UNAUTHORIZED, INVALID_TOKEN, TOKEN_EXPIRED]
+
+    RateLimited:
+      description: 请求频率限制
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiResponse'
+              - type: object
+                properties:
+                  error:
+                    allOf:
+                      - $ref: '#/components/schemas/ApiError'
+                      - type: object
+                        properties:
+                          code:
+                            enum: [RATE_LIMITED]
+      headers:
+        Retry-After:
+          description: 重试等待时间（秒）
+          schema:
+            type: integer
+
+  schemas:
+    ApiResponse:
+      type: object
+      required:
+        - success
+        - timestamp
+      properties:
+        success:
+          type: boolean
+          description: 请求是否成功
+        data:
+          description: 响应数据
+        error:
+          $ref: '#/components/schemas/ApiError'
+        timestamp:
+          type: number
+          description: 响应时间戳
+        requestId:
+          type: string
+          format: uuid
+          description: 请求 ID
+
+    ApiError:
+      type: object
+      required:
+        - code
+        - message
+        - timestamp
+      properties:
+        code:
+          type: string
+          description: 错误码
+        message:
+          type: string
+          description: 错误消息
+        details:
+          description: 错误详情
+        timestamp:
+          type: number
+          description: 错误时间戳
+        requestId:
+          type: string
+          format: uuid
+          description: 请求 ID
+
+    DeviceBeginRequest:
+      type: object
+      required:
+        - deviceName
+        - deviceType
+      properties:
+        deviceName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 设备名称
+        deviceType:
+          type: string
+          enum: [desktop, mobile, web]
+          description: 设备类型
+        platform:
+          type: string
+          maxLength: 50
+          description: 操作系统平台
+        version:
+          type: string
+          maxLength: 20
+          description: 应用版本
+        userId:
+          type: string
+          format: uuid
+          description: 用户 ID（可选）
+
+    DeviceBeginResponse:
+      type: object
+      required:
+        - deviceId
+        - token
+        - expiresAt
+      properties:
+        deviceId:
+          type: string
+          format: uuid
+          description: 设备 ID
+        token:
+          type: string
+          description: 访问令牌
+        expiresAt:
+          type: number
+          description: 令牌过期时间
+        refreshToken:
+          type: string
+          description: 刷新令牌
+
+    DeviceRefreshRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          description: 刷新令牌
+
+    DeviceRefreshResponse:
+      type: object
+      required:
+        - token
+        - expiresAt
+      properties:
+        token:
+          type: string
+          description: 新的访问令牌
+        expiresAt:
+          type: number
+          description: 令牌过期时间
+
+    IndexResponse:
+      type: object
+      required:
+        - events
+        - nextClock
+        - hasMore
+        - serverTime
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/OperationEvent'
+          description: 事件列表
+        nextClock:
+          type: integer
+          minimum: 0
+          description: 下一个时钟值
+        hasMore:
+          type: boolean
+          description: 是否还有更多事件
+        serverTime:
+          type: number
+          description: 服务器当前时间
+
+    IndexBatchRequest:
+      type: object
+      required:
+        - events
+        - clientClock
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/OperationEvent'
+          minItems: 1
+          maxItems: 100
+          description: 事件列表
+        clientClock:
+          type: integer
+          minimum: 0
+          description: 客户端当前时钟
+        expectServerClock:
+          type: integer
+          minimum: 0
+          description: 期望的服务器时钟
+
+    IndexBatchResponse:
+      type: object
+      required:
+        - mappings
+        - serverClock
+      properties:
+        mappings:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventMapping'
+          description: 事件映射结果
+        serverClock:
+          type: integer
+          minimum: 0
+          description: 当前服务器时钟
+        conflicts:
+          type: array
+          items:
+            type: object
+            required:
+              - eventId
+              - reason
+            properties:
+              eventId:
+                type: string
+                format: uuid
+              reason:
+                type: string
+              suggestedResolution:
+                description: 建议的解决方案
+          description: 冲突列表
+
+    EventMapping:
+      type: object
+      required:
+        - clientEventId
+        - serverEventId
+        - serverClock
+        - status
+      properties:
+        clientEventId:
+          type: string
+          format: uuid
+          description: 客户端事件 ID
+        serverEventId:
+          type: string
+          format: uuid
+          description: 服务器事件 ID
+        serverClock:
+          type: integer
+          minimum: 0
+          description: 服务器时钟
+        status:
+          type: string
+          enum: [accepted, duplicate, conflict, rejected]
+          description: 处理状态
+        conflictReason:
+          type: string
+          description: 冲突原因
+
+    OperationEvent:
+      type: object
+      required:
+        - id
+        - type
+        - operation
+        - deviceId
+        - timestamp
+        - version
+        - payload
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 事件 ID
+        type:
+          type: string
+          description: 事件类型
+        operation:
+          type: string
+          enum: [create, update, delete, restore, add_relation, remove_relation, update_relation, reorder]
+          description: 操作类型
+        deviceId:
+          type: string
+          format: uuid
+          description: 设备 ID
+        userId:
+          type: string
+          format: uuid
+          description: 用户 ID
+        timestamp:
+          type: number
+          description: 事件时间戳
+        serverTimestamp:
+          type: number
+          description: 服务器时间戳
+        version:
+          type: integer
+          minimum: 1
+          description: 事件版本
+        causedBy:
+          type: string
+          format: uuid
+          description: 引起此事件的事件 ID
+        batchId:
+          type: string
+          format: uuid
+          description: 批量操作 ID
+        payload:
+          description: 事件载荷
+
+    PresignUploadRequest:
+      type: object
+      required:
+        - contentHash
+        - fileName
+        - contentType
+        - contentLength
+      properties:
+        contentHash:
+          type: string
+          minLength: 1
+          description: 文件内容哈希
+        fileName:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 文件名
+        contentType:
+          type: string
+          enum: [image/jpeg, image/png, image/gif, image/webp]
+          description: 文件类型
+        contentLength:
+          type: integer
+          minimum: 1
+          maximum: 52428800
+          description: 文件大小（字节）
+        generateThumbnails:
+          type: boolean
+          default: true
+          description: 是否生成缩略图
+
+    PresignUploadResponse:
+      type: object
+      required:
+        - uploadUrl
+        - uploadHeaders
+        - assetKey
+        - expiresAt
+      properties:
+        uploadUrl:
+          type: string
+          format: uri
+          description: 上传 URL
+        uploadHeaders:
+          type: object
+          additionalProperties:
+            type: string
+          description: 上传请求头
+        assetKey:
+          type: string
+          description: 资产键
+        expiresAt:
+          type: number
+          description: URL 过期时间
+        thumbnailKeys:
+          type: object
+          properties:
+            small:
+              type: string
+              description: 小缩略图键
+            medium:
+              type: string
+              description: 中缩略图键
+
+    UploadCompleteRequest:
+      type: object
+      required:
+        - assetKey
+        - contentHash
+        - actualSize
+      properties:
+        assetKey:
+          type: string
+          description: 资产键
+        contentHash:
+          type: string
+          description: 文件内容哈希
+        actualSize:
+          type: integer
+          minimum: 1
+          description: 实际文件大小
+        metadata:
+          type: object
+          properties:
+            width:
+              type: integer
+              minimum: 1
+            height:
+              type: integer
+              minimum: 1
+            format:
+              type: string
+
+    UploadCompleteResponse:
+      type: object
+      required:
+        - assetId
+        - urls
+      properties:
+        assetId:
+          type: string
+          format: uuid
+          description: 资产 ID
+        urls:
+          type: object
+          required:
+            - original
+          properties:
+            original:
+              type: string
+              format: uri
+              description: 原图 URL
+            thumbnails:
+              type: object
+              properties:
+                small:
+                  type: string
+                  format: uri
+                medium:
+                  type: string
+                  format: uri
+
+    SnapshotLatestResponse:
+      type: object
+      required:
+        - snapshotId
+        - downloadUrl
+        - snapshotClock
+        - createdAt
+        - expiresAt
+        - size
+        - checksum
+        - metadata
+      properties:
+        snapshotId:
+          type: string
+          format: uuid
+          description: 快照 ID
+        downloadUrl:
+          type: string
+          format: uri
+          description: 下载 URL
+        snapshotClock:
+          type: integer
+          minimum: 0
+          description: 快照时钟
+        createdAt:
+          type: number
+          description: 创建时间
+        expiresAt:
+          type: number
+          description: 过期时间
+        size:
+          type: integer
+          minimum: 0
+          description: 文件大小
+        checksum:
+          type: string
+          description: 文件校验和
+        metadata:
+          type: object
+          required:
+            - assetsCount
+            - tagsCount
+            - keywordsCount
+            - eventsCount
+          properties:
+            assetsCount:
+              type: integer
+              minimum: 0
+            tagsCount:
+              type: integer
+              minimum: 0
+            keywordsCount:
+              type: integer
+              minimum: 0
+            eventsCount:
+              type: integer
+              minimum: 0
+
+    SnapshotCreateRequest:
+      type: object
+      properties:
+        includeAssets:
+          type: boolean
+          default: true
+          description: 是否包含资产数据
+        compression:
+          type: string
+          enum: [none, gzip, brotli]
+          default: gzip
+          description: 压缩方式
+        maxAge:
+          type: integer
+          minimum: 3600
+          maximum: 2592000
+          default: 604800
+          description: 最大保存时间（秒）
+
+    SnapshotCreateResponse:
+      type: object
+      required:
+        - snapshotId
+        - status
+      properties:
+        snapshotId:
+          type: string
+          format: uuid
+          description: 快照 ID
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+          description: 创建状态
+        estimatedCompletionTime:
+          type: number
+          description: 预计完成时间
+
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - services
+        - version
+        - uptime
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+          description: 整体状态
+        timestamp:
+          type: number
+          description: 检查时间
+        services:
+          type: object
+          required:
+            - d1
+            - r2
+            - kv
+          properties:
+            d1:
+              type: string
+              enum: [healthy, degraded, unhealthy]
+            r2:
+              type: string
+              enum: [healthy, degraded, unhealthy]
+            kv:
+              type: string
+              enum: [healthy, degraded, unhealthy]
+        version:
+          type: string
+          description: API 版本
+        uptime:
+          type: number
+          description: 运行时间（秒）
+
+    StatsResponse:
+      type: object
+      required:
+        - totalDevices
+        - totalAssets
+        - totalEvents
+        - storageUsed
+        - activeDevices24h
+      properties:
+        totalDevices:
+          type: integer
+          minimum: 0
+          description: 总设备数
+        totalAssets:
+          type: integer
+          minimum: 0
+          description: 总资产数
+        totalEvents:
+          type: integer
+          minimum: 0
+          description: 总事件数
+        storageUsed:
+          type: integer
+          minimum: 0
+          description: 存储使用量（字节）
+        lastSyncTime:
+          type: number
+          description: 最后同步时间
+        activeDevices24h:
+          type: integer
+          minimum: 0
+          description: 24小时内活跃设备数
+
+tags:
+  - name: System
+    description: 系统相关接口
+  - name: Authentication
+    description: 认证相关接口
+  - name: Sync
+    description: 同步相关接口
+  - name: Storage
+    description: 存储相关接口
+  - name: Snapshot
+    description: 快照相关接口

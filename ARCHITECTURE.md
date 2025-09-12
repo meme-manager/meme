@@ -142,7 +142,7 @@
   - 根工作区使用 pnpm
     workspace；目录：/apps/desktop、/apps/worker、/packages/shared。
   - 验收：Tauri 空壳启动；Workers 本地模拟提供 hello 接口。
-- 0.2 工程规范与CI [ ]
+- 0.2 工程规范与CI [/]
   - ESLint/Prettier、TypeScript、husky+lint-staged、commitlint、editorconfig、基础CI。
   - 验收：提交触发lint与build并通过。
 - 0.3 环境与密钥管理 [/]
@@ -151,26 +151,27 @@
 
 ### 阶段1：数据模型与协议
 
-- 1.1 共享类型与事件模型（packages/shared）[ ]
+- 1.1 共享类型与事件模型（packages/shared）[/]
   - 定义实体：Asset/Tag/Keyword/AssetTag/AssetKeyword。
   - 定义 OperationEvent 与事件枚举，zod 校验与类型守卫。
   - 验收：单元测试覆盖事件示例。
-- 1.2 同步协议接口契约 [ ]
+- 1.2 同步协议接口契约 [/]
   - DTO与错误码：/index（GET/POST）、/r2/presign-upload、/snapshot/latest、/auth/device-begin。
   - 产出：OpenAPI/TS 接口声明。
   - 验收：contract tests 通过。
 
 ### 阶段2：云端最小可用（Workers + D1 + R2）
 
-- 2.1 D1 初始化迁移 [ ]
+- 2.1 D1 初始化迁移 [x] ✅
   - 建表：events、devices、users、asset_meta、index_state。
   - 验收：迁移可重复执行。
-- 2.2 云索引读写 API [ ]
+- 2.2 云索引读写 API [x] ✅
   - GET /index?since&limit（按 serverClock 有序分页）；POST
     /index/batch（去重与映射）。
   - 验收：并发下 serverClock 单调；重复提交幂等。
-- 2.3 设备注册与鉴权 [ ]
+- 2.3 设备注册与鉴权 [x]
   - POST /auth/device-begin 发 token；中间件校验；基础限流。
+  - 验收：未授权拒绝访问 ✅
   - 验收：未授权拒绝访问。
 - 2.4 R2 直传与缩略图访问 [ ]
   - 预签名上传；GET /asset/{id}/thumb 代理或302；正确缓存头。

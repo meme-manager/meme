@@ -8,15 +8,26 @@
     "deploy": "wrangler deploy",
     "build": "wrangler deploy --dry-run",
     "type-check": "tsc --noEmit",
-    "test": "echo \"No tests yet\""
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:migrate": "node scripts/migrate.js",
+    "db:migrate:dev": "node scripts/migrate.js --env=dev",
+    "db:migrate:staging": "node scripts/migrate.js --env=staging",
+    "db:migrate:production": "node scripts/migrate.js --env=production",
+    "db:status": "node scripts/migrate.js status",
+    "db:status:dev": "node scripts/migrate.js status --env=dev",
+    "db:status:staging": "node scripts/migrate.js status --env=staging",
+    "db:status:production": "node scripts/migrate.js status --env=production"
   },
   "dependencies": {
     "hono": "^3.12.0",
+    "zod": "^3.22.0",
     "@meme-manager/shared": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240000.0",
     "wrangler": "^3.22.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
   }
 }
