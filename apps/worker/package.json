@@ -1,0 +1,22 @@
+{
+  "name": "@meme-manager/worker",
+  "version": "0.1.0",
+  "description": "Cloudflare Workers API 服务",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "wrangler deploy --dry-run",
+    "type-check": "tsc --noEmit",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "hono": "^3.12.0",
+    "@meme-manager/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240000.0",
+    "wrangler": "^3.22.0",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "name": "meme-manager",
+  "version": "0.1.0",
+  "description": "跨平台表情包管理工具",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/*\" dev",
+    "build": "pnpm --recursive --filter \"./packages/*\" build && pnpm --recursive --filter \"./apps/*\" build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "type-check": "pnpm --recursive type-check",
+    "clean": "pnpm --recursive clean",
+    "prepare": "husky",
+    "test": "pnpm --recursive test"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.57.1",
+    "husky": "^9.1.7",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0"
+}
