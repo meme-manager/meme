@@ -15,7 +15,14 @@
     "type-check": "pnpm --recursive type-check",
     "clean": "pnpm --recursive clean",
     "prepare": "husky",
-    "test": "pnpm --recursive test"
+    "test": "pnpm --recursive test",
+    "env:init": "node scripts/env-setup.js init",
+    "env:validate": "node scripts/env-setup.js validate",
+    "env:init:dev": "node scripts/env-setup.js init development",
+    "env:init:staging": "node scripts/env-setup.js init staging",
+    "env:init:prod": "node scripts/env-setup.js init production",
+    "deploy:staging": "cd apps/worker && pnpm wrangler deploy --env staging",
+    "deploy:prod": "cd apps/worker && pnpm wrangler deploy --env production"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

@@ -145,7 +145,7 @@
 - 0.2 工程规范与CI [ ]
   - ESLint/Prettier、TypeScript、husky+lint-staged、commitlint、editorconfig、基础CI。
   - 验收：提交触发lint与build并通过。
-- 0.3 环境与密钥管理 [ ]
+- 0.3 环境与密钥管理 [/]
   - .env.example、wrangler.toml、R2/D1/KV 绑定占位；区分 dev/staging/prod。
   - 验收：本地/预发/生产配置可加载。
 
