@@ -6,12 +6,15 @@ import { ToastContainer } from './components/ui/Toast';
 import { ImportProgress } from './components/import/ImportProgress';
 import { useAssetStore } from './stores/assetStore';
 import { useTagStore } from './stores/tagStore';
+import { useSearchStore } from './stores/searchStore';
 import { initDatabase } from './lib/database';
+import { useKeyboard } from './hooks/useKeyboard';
 import "./App.css";
 
 function App() {
-  const { loadAssets } = useAssetStore();
+  const { loadAssets, selectAll, clearSelection } = useAssetStore();
   const { loadTags } = useTagStore();
+  const { setQuery } = useSearchStore();
 
   useEffect(() => {
     const init = async () => {
@@ -25,6 +28,20 @@ function App() {
     };
     init();
   }, []);
+  
+  // 快捷键支持
+  useKeyboard({
+    'ctrl+a': selectAll,
+    'ctrl+d': clearSelection,
+    'ctrl+f': () => {
+      const searchInput = document.querySelector('.search-input') as HTMLInputElement;
+      searchInput?.focus();
+    },
+    'escape': () => {
+      clearSelection();
+      setQuery('');
+    },
+  });
 
   return (
     <div className="app">

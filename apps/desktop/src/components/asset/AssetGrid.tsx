@@ -1,19 +1,43 @@
 import { useState } from 'react';
 import { useAssetStore } from '../../stores/assetStore';
 import { useSearchStore } from '../../stores/searchStore';
+import { useToastStore } from '../ui/Toast';
 import { AssetCard } from './AssetCard';
 import { AssetDetail } from './AssetDetail';
 import { DropZone } from './DropZone';
+import { Button } from '../ui/Button';
 import type { Asset } from '../../types/asset';
 import './AssetGrid.css';
 
 export function AssetGrid() {
-  const { assets, selectedAssetIds, selectAsset, deselectAsset } = useAssetStore();
+  const { assets, selectedAssetIds, selectAsset, deselectAsset, clearSelection, selectAll, deleteAssetById } = useAssetStore();
   const { query, results } = useSearchStore();
   const [detailAsset, setDetailAsset] = useState<Asset | null>(null);
+  const { addToast } = useToastStore.getState();
   
   // 使用搜索结果或全部资产
   const displayAssets = query && results ? results.assets : assets;
+  
+  const handleBatchDelete = async () => {
+    if (selectedAssetIds.size === 0) return;
+    
+    if (!confirm(`确定要删除选中的 ${selectedAssetIds.size} 张图片吗？`)) return;
+    
+    const ids = Array.from(selectedAssetIds);
+    let successCount = 0;
+    
+    for (const id of ids) {
+      try {
+        await deleteAssetById(id);
+        successCount++;
+      } catch (error) {
+        console.error('Failed to delete:', error);
+      }
+    }
+    
+    clearSelection();
+    addToast(`成功删除 ${successCount} 张图片`, 'success');
+  };
 
   if (displayAssets.length === 0 && !query) {
     return (
@@ -37,6 +61,19 @@ export function AssetGrid() {
 
   return (
     <>
+      {selectedAssetIds.size > 0 && (
+        <div className="batch-actions-bar">
+          <div className="batch-info">
+            已选择 {selectedAssetIds.size} 张图片
+          </div>
+          <div className="batch-buttons">
+            <Button onClick={selectAll}>全选</Button>
+            <Button onClick={clearSelection}>取消选择</Button>
+            <Button onClick={handleBatchDelete}>批量删除</Button>
+          </div>
+        </div>
+      )}
+      
       <div className="asset-grid">
         {displayAssets.map(asset => (
           <AssetCard

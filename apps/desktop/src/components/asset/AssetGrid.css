@@ -1,8 +1,31 @@
+.batch-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: #f0f9ff;
+  border-bottom: 1px solid #bfdbfe;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.batch-info {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e40af;
+}
+
+.batch-buttons {
+  display: flex;
+  gap: 8px;
+}
+
 .asset-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 16px;
-  padding: 20px;
+  padding: 24px;
 }
 
 .asset-grid-empty {
