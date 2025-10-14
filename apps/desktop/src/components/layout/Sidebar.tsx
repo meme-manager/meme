@@ -66,7 +66,14 @@ export function Sidebar() {
             </div>
             <ul className="nav-list">
               {tags.slice(0, 10).map(tag => (
-                <li key={tag.id} className="nav-item">
+                <li 
+                  key={tag.id} 
+                  className="nav-item"
+                  onClick={() => {
+                    // TODO: 实现标签筛选
+                    console.log('Filter by tag:', tag.name);
+                  }}
+                >
                   <span
                     className="nav-tag"
                     style={{ background: tag.color || '#6b7280' }}

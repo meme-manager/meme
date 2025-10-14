@@ -1,12 +1,16 @@
+import { useState } from 'react';
 import { useAssetStore } from '../../stores/assetStore';
 import { useSearchStore } from '../../stores/searchStore';
 import { AssetCard } from './AssetCard';
+import { AssetDetail } from './AssetDetail';
 import { DropZone } from './DropZone';
+import type { Asset } from '../../types/asset';
 import './AssetGrid.css';
 
 export function AssetGrid() {
   const { assets, selectedAssetIds, selectAsset, deselectAsset } = useAssetStore();
   const { query, results } = useSearchStore();
+  const [detailAsset, setDetailAsset] = useState<Asset | null>(null);
   
   // 使用搜索结果或全部资产
   const displayAssets = query && results ? results.assets : assets;
@@ -32,25 +36,32 @@ export function AssetGrid() {
   }
 
   return (
-    <div className="asset-grid">
-      {displayAssets.map(asset => (
-        <AssetCard
-          key={asset.id}
-          asset={asset}
-          selected={selectedAssetIds.has(asset.id)}
-          onSelect={() => {
-            if (selectedAssetIds.has(asset.id)) {
-              deselectAsset(asset.id);
-            } else {
-              selectAsset(asset.id);
-            }
-          }}
-          onClick={() => {
-            // TODO: 打开资产详情
-            console.log('Open asset:', asset.id);
-          }}
-        />
-      ))}
-    </div>
+    <>
+      <div className="asset-grid">
+        {displayAssets.map(asset => (
+          <AssetCard
+            key={asset.id}
+            asset={asset}
+            selected={selectedAssetIds.has(asset.id)}
+            onSelect={() => {
+              if (selectedAssetIds.has(asset.id)) {
+                deselectAsset(asset.id);
+              } else {
+                selectAsset(asset.id);
+              }
+            }}
+            onClick={() => {
+              setDetailAsset(asset);
+            }}
+          />
+        ))}
+      </div>
+      
+      <AssetDetail
+        asset={detailAsset}
+        open={detailAsset !== null}
+        onClose={() => setDetailAsset(null)}
+      />
+    </>
   );
 }

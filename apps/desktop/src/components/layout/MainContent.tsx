@@ -18,8 +18,11 @@ export function MainContent() {
   const handleDragLeave = (e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // 只有离开主容器时才取消拖拽状态
-    if (e.currentTarget === e.target) {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    // 检查鼠标是否真的离开了容器
+    if (x <= rect.left || x >= rect.right || y <= rect.top || y >= rect.bottom) {
       setIsDragging(false);
     }
   };
