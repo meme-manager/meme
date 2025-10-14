@@ -4,7 +4,10 @@ use tauri::{AppHandle, Manager};
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, Digest};
 use image::imageops::FilterType;
+
+#[cfg(not(target_os = "macos"))]
 use arboard::{Clipboard, ImageData};
+#[cfg(not(target_os = "macos"))]
 use std::borrow::Cow;
 
 #[cfg(target_os = "macos")]
@@ -18,8 +21,8 @@ fn create_tiff_data(width: u32, height: u32, rgba_data: &[u8]) -> Vec<u8> {
     tiff.extend_from_slice(&[0x08, 0x00, 0x00, 0x00]); // Offset to first IFD
     
     // Image data starts at offset 8 + IFD size
-    let ifd_size = 2 + 12 * 11 + 4; // tag count + 11 tags * 12 bytes + next IFD offset
-    let data_offset = 8 + ifd_size;
+    let ifd_size: u32 = 2 + 12 * 11 + 4; // tag count + 11 tags * 12 bytes + next IFD offset
+    let data_offset: u32 = 8 + ifd_size;
     
     // IFD (Image File Directory)
     tiff.extend_from_slice(&[0x0B, 0x00]); // 11 tags
@@ -260,12 +263,6 @@ pub async fn copy_image_to_clipboard(
                     .map_err(|e| format!("Failed to open GIF: {}", e))?;
                 let rgba = img.to_rgba8();
                 let (width, height) = rgba.dimensions();
-                
-                let image_data = ImageData {
-                    width: width as usize,
-                    height: height as usize,
-                    bytes: Cow::from(rgba.as_raw().as_slice()),
-                };
                 
                 // 转换为TIFF格式（macOS剪贴板的标准格式）
                 let tiff_type = NSString::alloc(nil);
