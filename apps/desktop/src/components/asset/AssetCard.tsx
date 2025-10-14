@@ -1,3 +1,4 @@
+import { convertFileSrc } from '@tauri-apps/api/core';
 import type { Asset } from '../../types/asset';
 import './AssetCard.css';
 
@@ -16,6 +17,9 @@ export function AssetCard({ asset, selected, onSelect, onClick }: AssetCardProps
       onClick?.();
     }
   };
+  
+  // 转换文件路径为Tauri可访问的URL
+  const imageSrc = convertFileSrc(asset.thumb_medium || asset.file_path);
 
   return (
     <div
@@ -24,7 +28,7 @@ export function AssetCard({ asset, selected, onSelect, onClick }: AssetCardProps
     >
       <div className="asset-card-image">
         <img
-          src={asset.thumb_medium || asset.file_path}
+          src={imageSrc}
           alt={asset.file_name}
           loading="lazy"
         />

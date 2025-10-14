@@ -12,7 +12,7 @@
     "test": "echo \"No tests yet\""
   },
   "dependencies": {
-    "@tauri-apps/api": "^2",
+    "@tauri-apps/api": "^2.8.0",
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-sql": "^2.3.0",
     "react": "^19.1.0",
