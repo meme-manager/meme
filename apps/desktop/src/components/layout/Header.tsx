@@ -1,12 +1,14 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useSearchStore } from '../../stores/searchStore';
 import { useAssetStore } from '../../stores/assetStore';
+import { ImportUrlDialog } from '../import/ImportUrlDialog';
 import './Header.css';
 
 export function Header() {
   const { query, setQuery } = useSearchStore();
   const { importMultipleAssets } = useAssetStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showUrlDialog, setShowUrlDialog] = useState(false);
   
   const handleImportClick = () => {
     fileInputRef.current?.click();
@@ -39,8 +41,11 @@ export function Header() {
       </div>
       
       <div className="header-right">
-        <button className="header-btn" onClick={handleImportClick} title="导入图片">
-          ➕
+        <button className="header-btn" onClick={handleImportClick} title="导入本地图片">
+          📁
+        </button>
+        <button className="header-btn" onClick={() => setShowUrlDialog(true)} title="从URL导入">
+          🔗
         </button>
         <button className="header-btn" title="设置">
           ⚙️
@@ -54,6 +59,11 @@ export function Header() {
           style={{ display: 'none' }}
         />
       </div>
+      
+      <ImportUrlDialog
+        open={showUrlDialog}
+        onClose={() => setShowUrlDialog(false)}
+      />
     </header>
   );
 }

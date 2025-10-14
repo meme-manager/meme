@@ -1,27 +1,31 @@
-import { useEffect } from "react";
-import { useAssetStore } from "./stores/assetStore";
-import { initDatabase } from "./lib/database";
-import { Header } from "./components/layout/Header";
-import { Sidebar } from "./components/layout/Sidebar";
-import { MainContent } from "./components/layout/MainContent";
+import { useEffect } from 'react';
+import { Header } from './components/layout/Header';
+import { Sidebar } from './components/layout/Sidebar';
+import { MainContent } from './components/layout/MainContent';
+import { ToastContainer } from './components/ui/Toast';
+import { ImportProgress } from './components/import/ImportProgress';
+import { useAssetStore } from './stores/assetStore';
+import { useTagStore } from './stores/tagStore';
+import { initDatabase } from './lib/database';
 import "./App.css";
 
 function App() {
-  const { loading, error, loadAssets } = useAssetStore();
-  
+  const { loadAssets } = useAssetStore();
+  const { loadTags } = useTagStore();
+
   useEffect(() => {
     const init = async () => {
       try {
         await initDatabase();
         await loadAssets();
-      } catch (err) {
-        console.error('Failed to initialize:', err);
+        await loadTags();
+      } catch (error) {
+        console.error('Failed to initialize app:', error);
       }
     };
-    
     init();
-  }, [loadAssets]);
-  
+  }, []);
+
   return (
     <div className="app">
       <Header />
@@ -29,18 +33,8 @@ function App() {
         <Sidebar />
         <MainContent />
       </div>
-      
-      {loading && (
-        <div className="loading-overlay">
-          <div className="loading-spinner">加载中...</div>
-        </div>
-      )}
-      
-      {error && (
-        <div className="error-toast">
-          错误: {error}
-        </div>
-      )}
+      <ToastContainer />
+      <ImportProgress />
     </div>
   );
 }
