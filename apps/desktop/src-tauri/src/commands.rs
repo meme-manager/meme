@@ -99,7 +99,8 @@ pub async fn generate_thumbnails(
 pub async fn import_from_url(
     app: AppHandle,
     url: String,
-) -> Result<String, String> {
+) -> Result<HashMap<String, String>, String> {
+    // 下载图片
     let response = reqwest::get(&url)
         .await
         .map_err(|e| format!("Failed to download: {}", e))?;
@@ -108,13 +109,36 @@ pub async fn import_from_url(
         .await
         .map_err(|e| format!("Failed to read bytes: {}", e))?;
     
+    // 计算哈希
     let mut hasher = Sha256::new();
     hasher.update(&bytes);
     let hash = format!("{:x}", hasher.finalize());
     
+    // 提取文件名
     let file_name = url.split('/').last()
         .unwrap_or("image.png")
         .to_string();
     
-    save_asset_file(app, bytes.to_vec(), file_name, hash).await
+    // 保存文件
+    let file_path = save_asset_file(app.clone(), bytes.to_vec(), file_name.clone(), hash.clone()).await?;
+    
+    // 生成缩略图
+    let sizes = ThumbnailSizes {
+        small: 128,
+        medium: 256,
+        large: 512,
+    };
+    let thumbnails = generate_thumbnails(app, file_path.clone(), sizes).await?;
+    
+    // 返回文件信息
+    let mut result = HashMap::new();
+    result.insert("file_path".to_string(), file_path);
+    result.insert("file_name".to_string(), file_name);
+    result.insert("hash".to_string(), hash);
+    result.insert("thumb_small".to_string(), thumbnails.get("small").cloned().unwrap_or_default());
+    result.insert("thumb_medium".to_string(), thumbnails.get("medium").cloned().unwrap_or_default());
+    result.insert("thumb_large".to_string(), thumbnails.get("large").cloned().unwrap_or_default());
+    
+    Ok(result)
+}
 }

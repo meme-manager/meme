@@ -1,8 +1,11 @@
 import { useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { Dialog } from '../ui/Dialog';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { useAssetStore } from '../../stores/assetStore';
+import { useToastStore } from '../ui/Toast';
+import { createAsset, getAssetByHash } from '../../lib/database/operations';
 import './ImportUrlDialog.css';
 
 interface ImportUrlDialogProps {
@@ -15,7 +18,8 @@ export function ImportUrlDialog({ open, onClose }: ImportUrlDialogProps) {
   const [urls, setUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const { importMultipleAssets } = useAssetStore();
+  const { refreshAssets } = useAssetStore();
+  const { addToast } = useToastStore.getState();
 
   const handleAddUrl = () => {
     const trimmedUrl = url.trim();
@@ -50,46 +54,83 @@ export function ImportUrlDialog({ open, onClose }: ImportUrlDialogProps) {
     setMessage('正在下载...');
 
     try {
-      // 下载所有URL的图片
-      const files: File[] = [];
+      let successCount = 0;
+      let failCount = 0;
+      
+      // 使用Tauri后端下载所有URL的图片
       for (const urlStr of urls) {
         try {
-          const response = await fetch(urlStr);
-          if (!response.ok) {
-            console.error(`Failed to fetch ${urlStr}`);
+          setMessage(`正在下载: ${urlStr.substring(0, 50)}...`);
+          
+          // 调用Tauri命令下载并保存图片
+          const result = await invoke<Record<string, string>>('import_from_url', { url: urlStr });
+          
+          // 检查是否已存在
+          const existing = await getAssetByHash(result.hash);
+          if (existing) {
+            console.log('Asset already exists:', result.hash);
+            successCount++;
             continue;
           }
           
-          const blob = await response.blob();
-          if (!blob.type.startsWith('image/')) {
-            console.error(`Not an image: ${urlStr}`);
-            continue;
-          }
+          // 获取图片尺寸
+          const img = new Image();
+          img.src = `asset://localhost/${result.file_path}`;
+          await new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          });
           
-          // 从URL提取文件名
-          const urlObj = new URL(urlStr);
-          const pathname = urlObj.pathname;
-          const filename = pathname.split('/').pop() || `image-${Date.now()}.${blob.type.split('/')[1]}`;
+          // 创建数据库记录
+          await createAsset({
+            content_hash: result.hash,
+            file_name: result.file_name,
+            file_path: result.file_path,
+            mime_type: result.file_name.endsWith('.gif') ? 'image/gif' : 
+                       result.file_name.endsWith('.png') ? 'image/png' :
+                       result.file_name.endsWith('.webp') ? 'image/webp' : 'image/jpeg',
+            file_size: 0, // 后端没有返回文件大小
+            width: img.naturalWidth || 0,
+            height: img.naturalHeight || 0,
+            source_url: urlStr,
+            source_platform: 'url',
+            thumb_small: result.thumb_small || null,
+            thumb_medium: result.thumb_medium || null,
+            thumb_large: result.thumb_large || null,
+            last_used_at: null,
+            use_count: 0,
+            synced: 0,
+            cloud_url: null,
+            deleted: 0,
+            deleted_at: null,
+          });
           
-          const file = new File([blob], filename, { type: blob.type });
-          files.push(file);
+          successCount++;
         } catch (error) {
-          console.error(`Error downloading ${urlStr}:`, error);
+          console.error(`Failed to import ${urlStr}:`, error);
+          failCount++;
         }
       }
 
-      if (files.length === 0) {
+      // 刷新资产列表
+      await refreshAssets();
+
+      if (successCount === 0) {
         setMessage('没有成功下载任何图片');
+        addToast('URL导入失败', 'error');
         setLoading(false);
         return;
       }
 
-      // 导入文件
-      await importMultipleAssets(files, {
-        source_platform: 'url',
-      });
-
-      setMessage(`成功导入 ${files.length} 张图片`);
+      // 显示结果
+      if (failCount > 0) {
+        setMessage(`成功导入 ${successCount} 张，失败 ${failCount} 张`);
+        addToast(`成功导入 ${successCount} 张图片，${failCount} 张失败`, 'warning');
+      } else {
+        setMessage(`成功导入 ${successCount} 张图片`);
+        addToast(`成功导入 ${successCount} 张图片`, 'success');
+      }
+      
       setTimeout(() => {
         onClose();
         setUrls([]);
@@ -99,6 +140,7 @@ export function ImportUrlDialog({ open, onClose }: ImportUrlDialogProps) {
     } catch (error) {
       console.error('Import error:', error);
       setMessage('导入失败');
+      addToast('导入失败', 'error');
     } finally {
       setLoading(false);
     }
