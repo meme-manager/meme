@@ -154,8 +154,7 @@ pub async fn copy_image_to_clipboard(
         use std::fs;
         use cocoa::base::{nil, id};
         use cocoa::foundation::{NSData, NSString};
-        use cocoa::appkit::NSPasteboard;
-        use objc::{msg_send, sel, sel_impl};
+        use objc::{class, msg_send, sel, sel_impl};
         
         unsafe {
             // 读取文件数据
