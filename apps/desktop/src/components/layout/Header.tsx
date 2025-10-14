@@ -1,6 +1,9 @@
+import { useSearchStore } from '../../stores/searchStore';
 import './Header.css';
 
 export function Header() {
+  const { query, setQuery } = useSearchStore();
+  
   return (
     <header className="header">
       <div className="header-left">
@@ -12,6 +15,8 @@ export function Header() {
           type="text"
           className="search-input"
           placeholder="搜索表情包..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
         />
       </div>
       

@@ -13,6 +13,29 @@
   padding: 20px;
 }
 
+.empty-search {
+  text-align: center;
+}
+
+.empty-search-icon {
+  font-size: 64px;
+  opacity: 0.3;
+  margin-bottom: 16px;
+}
+
+.empty-search h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.empty-search p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
 @media (max-width: 768px) {
   .asset-grid {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));

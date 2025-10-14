@@ -1,22 +1,39 @@
 import { useAssetStore } from '../../stores/assetStore';
+import { useSearchStore } from '../../stores/searchStore';
 import { AssetCard } from './AssetCard';
 import { DropZone } from './DropZone';
 import './AssetGrid.css';
 
 export function AssetGrid() {
   const { assets, selectedAssetIds, selectAsset, deselectAsset } = useAssetStore();
+  const { query, results } = useSearchStore();
+  
+  // 使用搜索结果或全部资产
+  const displayAssets = query && results ? results.assets : assets;
 
-  if (assets.length === 0) {
+  if (displayAssets.length === 0 && !query) {
     return (
       <div className="asset-grid-empty">
         <DropZone />
       </div>
     );
   }
+  
+  if (displayAssets.length === 0 && query) {
+    return (
+      <div className="asset-grid-empty">
+        <div className="empty-search">
+          <div className="empty-search-icon">🔍</div>
+          <h3>未找到匹配的表情包</h3>
+          <p>尝试使用不同的关键词搜索</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="asset-grid">
-      {assets.map(asset => (
+      {displayAssets.map(asset => (
         <AssetCard
           key={asset.id}
           asset={asset}
