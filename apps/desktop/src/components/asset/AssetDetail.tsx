@@ -68,19 +68,44 @@ export function AssetDetail({ asset, open, onClose }: AssetDetailProps) {
   const handleCopyImage = async () => {
     if (!asset) return;
     try {
-      // 使用Web Clipboard API复制图片
-      const response = await fetch(convertFileSrc(asset.file_path));
-      const blob = await response.blob();
+      // 创建一个临时的img元素来加载图片
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = convertFileSrc(asset.file_path);
+      
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+      
+      // 使用canvas转换为blob
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('无法获取canvas context');
+      
+      ctx.drawImage(img, 0, 0);
+      
+      // 转换为blob并复制
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((b) => {
+          if (b) resolve(b);
+          else reject(new Error('转换失败'));
+        }, asset.mime_type);
+      });
+      
       await navigator.clipboard.write([
-        new ClipboardItem({ [blob.type]: blob })
+        new ClipboardItem({ [asset.mime_type]: blob })
       ]);
+      
       await incrementAssetUseCount(asset.id);
       setMessage('已复制到剪贴板');
       setTimeout(() => setMessage(''), 2000);
     } catch (error) {
       console.error('Failed to copy image:', error);
-      setMessage('复制失败');
-      setTimeout(() => setMessage(''), 2000);
+      setMessage(`复制失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      setTimeout(() => setMessage(''), 3000);
     }
   };
   
