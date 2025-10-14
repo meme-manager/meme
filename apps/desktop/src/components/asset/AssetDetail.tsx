@@ -101,12 +101,14 @@ export function AssetDetail({ asset, open, onClose }: AssetDetailProps) {
     setLoading(true);
     try {
       await deleteAssetById(asset.id);
-      setMessage('已删除');
-      onClose();
+      setMessage('✅ 已删除');
+      // 等待一下让用户看到成功消息，然后关闭
+      setTimeout(() => {
+        onClose();
+      }, 500);
     } catch (error) {
       console.error('Failed to delete asset:', error);
-      setMessage('删除失败');
-    } finally {
+      setMessage('❌ 删除失败: ' + (error instanceof Error ? error.message : String(error)));
       setLoading(false);
     }
   };
