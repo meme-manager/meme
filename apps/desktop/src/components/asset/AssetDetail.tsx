@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { convertFileSrc } from '@tauri-apps/api/core';
-import { writeText } from '@tauri-apps/plugin-clipboard-manager';
+import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { Dialog } from '../ui/Dialog';
 import { Button } from '../ui/Button';
 import { useTagStore } from '../../stores/tagStore';
@@ -75,28 +74,22 @@ export function AssetDetail({ asset, open, onClose }: AssetDetailProps) {
   
   const handleCopyImage = async () => {
     if (!asset) return;
+    setLoading(true);
     try {
-      // 方案1: 尝试复制图片到剪贴板（可能不被所有应用支持）
-      const response = await fetch(convertFileSrc(asset.file_path));
-      const blob = await response.blob();
+      // 使用Tauri后端复制图片到剪贴板
+      await invoke('copy_image_to_clipboard', { 
+        filePath: asset.file_path 
+      });
       
-      try {
-        await navigator.clipboard.write([
-          new ClipboardItem({ [blob.type]: blob })
-        ]);
-        await incrementUseCount(asset.id);
-        setMessage('✅ 已复制图片，可以粘贴到支持的应用（如微信、QQ等）');
-      } catch (clipError) {
-        // 如果剪贴板API失败，复制文件路径作为备选
-        await writeText(asset.file_path);
-        setMessage('⚠️ 已复制文件路径。提示：可以直接拖拽图片到其他应用！');
-      }
-      
-      setTimeout(() => setMessage(''), 4000);
+      await incrementUseCount(asset.id);
+      setMessage('✅ 已复制图片到剪贴板！现在可以粘贴到任何应用（微信、QQ、钉钉等）');
+      setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       console.error('Failed to copy:', error);
-      setMessage(`复制失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      setMessage(`❌ 复制失败: ${error instanceof Error ? error.message : String(error)}`);
       setTimeout(() => setMessage(''), 3000);
+    } finally {
+      setLoading(false);
     }
   };
   

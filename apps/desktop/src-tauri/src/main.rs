@@ -10,6 +10,7 @@ fn main() {
             tauri_app_lib::commands::save_asset_file,
             tauri_app_lib::commands::generate_thumbnails,
             tauri_app_lib::commands::import_from_url,
+            tauri_app_lib::commands::copy_image_to_clipboard,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
