@@ -146,3 +146,23 @@
   color: #111827;
   font-weight: 500;
 }
+
+.asset-detail-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 16px;
+}
+
+.footer-message {
+  font-size: 13px;
+  color: #10b981;
+  font-weight: 500;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}

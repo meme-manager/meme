@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import type { Asset, Tag } from '../../types/asset';
 import { useTagStore } from '../../stores/tagStore';
+import { useAssetStore } from '../../stores/assetStore';
 import { getAssetTags } from '../../lib/database/operations';
 import { addAssetTag, removeAssetTag } from '../../lib/database/operations';
 import { Dialog } from '../ui/Dialog';
@@ -16,8 +17,10 @@ interface AssetDetailProps {
 
 export function AssetDetail({ asset, open, onClose }: AssetDetailProps) {
   const { tags: allTags, loadTags } = useTagStore();
+  const { deleteAssetById, incrementAssetUseCount } = useAssetStore();
   const [assetTags, setAssetTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string>('');
   
   useEffect(() => {
     if (asset && open) {
@@ -62,6 +65,42 @@ export function AssetDetail({ asset, open, onClose }: AssetDetailProps) {
     }
   };
   
+  const handleCopyImage = async () => {
+    if (!asset) return;
+    try {
+      // 使用Web Clipboard API复制图片
+      const response = await fetch(convertFileSrc(asset.file_path));
+      const blob = await response.blob();
+      await navigator.clipboard.write([
+        new ClipboardItem({ [blob.type]: blob })
+      ]);
+      await incrementAssetUseCount(asset.id);
+      setMessage('已复制到剪贴板');
+      setTimeout(() => setMessage(''), 2000);
+    } catch (error) {
+      console.error('Failed to copy image:', error);
+      setMessage('复制失败');
+      setTimeout(() => setMessage(''), 2000);
+    }
+  };
+  
+  const handleDelete = async () => {
+    if (!asset) return;
+    if (!confirm(`确定要删除 ${asset.file_name} 吗？`)) return;
+    
+    setLoading(true);
+    try {
+      await deleteAssetById(asset.id);
+      setMessage('已删除');
+      onClose();
+    } catch (error) {
+      console.error('Failed to delete asset:', error);
+      setMessage('删除失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   if (!asset) return null;
   
   const imageSrc = convertFileSrc(asset.file_path);
@@ -74,7 +113,18 @@ export function AssetDetail({ asset, open, onClose }: AssetDetailProps) {
       onClose={onClose}
       title="图片详情"
       footer={
-        <Button onClick={onClose}>关闭</Button>
+        <div className="asset-detail-footer">
+          {message && <span className="footer-message">{message}</span>}
+          <div className="footer-actions">
+            <Button onClick={handleCopyImage} disabled={loading}>
+              📋 复制
+            </Button>
+            <Button onClick={handleDelete} disabled={loading}>
+              🗑️ 删除
+            </Button>
+            <Button onClick={onClose}>关闭</Button>
+          </div>
+        </div>
       }
     >
       <div className="asset-detail">
