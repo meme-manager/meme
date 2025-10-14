@@ -3,28 +3,27 @@
  */
 
 import { create } from 'zustand';
-import type { SearchOptions, SearchResult, SearchFilter } from '../types/search';
-import { searchAssets } from '../lib/search';
+import { searchAssets, type SearchFilters, type SearchResult } from '../lib/search';
 
 interface SearchState {
   query: string;
-  filters: SearchFilter[];
+  filters: SearchFilters;
   results: SearchResult | null;
   loading: boolean;
   error: string | null;
   
   // Actions
   setQuery: (query: string) => void;
-  addFilter: (filter: SearchFilter) => void;
-  removeFilter: (type: string, value: any) => void;
-  clearFilters: () => void;
-  search: (options?: Partial<SearchOptions>) => Promise<void>;
+  setFilters: (filters: SearchFilters) => void;
+  search: () => Promise<void>;
   clearResults: () => void;
 }
 
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
 export const useSearchStore = create<SearchState>((set, get) => ({
   query: '',
-  filters: [],
+  filters: {},
   results: null,
   loading: false,
   error: null,
@@ -32,57 +31,32 @@ export const useSearchStore = create<SearchState>((set, get) => ({
   setQuery: (query) => {
     set({ query });
     // 自动搜索（带防抖）
-    const timeoutId = setTimeout(() => {
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+    searchTimeout = setTimeout(() => {
       get().search();
     }, 300);
-    return () => clearTimeout(timeoutId);
   },
   
-  addFilter: (filter) => {
-    set(state => ({
-      filters: [...state.filters, { ...filter, active: true }]
-    }));
+  setFilters: (filters) => {
+    set({ filters });
     get().search();
   },
   
-  removeFilter: (type, value) => {
-    set(state => ({
-      filters: state.filters.filter(
-        f => !(f.type === type && f.value === value)
-      )
-    }));
-    get().search();
-  },
-  
-  clearFilters: () => {
-    set({ filters: [] });
-    get().search();
-  },
-  
-  search: async (options = {}) => {
+  search: async () => {
     const { query, filters } = get();
+    
+    // 如果没有查询词，清空结果
+    if (!query.trim()) {
+      set({ results: null });
+      return;
+    }
     
     set({ loading: true, error: null });
     
     try {
-      // 构建搜索选项
-      const searchOptions: SearchOptions = {
-        query,
-        filters: {
-          mimeTypes: filters
-            .filter(f => f.type === 'mimeType' && f.active)
-            .map(f => f.value as string),
-          tags: filters
-            .filter(f => f.type === 'tag' && f.active)
-            .map(f => f.value as string),
-          collections: filters
-            .filter(f => f.type === 'collection' && f.active)
-            .map(f => f.value as string),
-        },
-        ...options,
-      };
-      
-      const results = await searchAssets(searchOptions);
+      const results = await searchAssets(query, filters);
       set({ results, loading: false });
     } catch (error) {
       set({
@@ -93,6 +67,6 @@ export const useSearchStore = create<SearchState>((set, get) => ({
   },
   
   clearResults: () => {
-    set({ results: null, query: '', filters: [] });
+    set({ results: null, query: '', filters: {} });
   },
 }));
