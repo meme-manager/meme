@@ -76,7 +76,7 @@ export function AssetDetail({ asset, open, onClose }: AssetDetailProps) {
     if (!asset) return;
     setLoading(true);
     try {
-      // 使用Tauri后端复制图片到剪贴板（支持GIF动画）
+      // 使用系统原生剪贴板复制图片（支持GIF动画）
       await invoke('copy_image_to_clipboard', { 
         filePath: asset.file_path 
       });

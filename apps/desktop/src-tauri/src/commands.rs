@@ -148,45 +148,83 @@ pub async fn import_from_url(
 #[tauri::command]
 pub async fn copy_image_to_clipboard(
     file_path: String,
-) -> Result<(), String> {
-    use std::fs;
-    use std::path::Path;
+) -> Result<String, String> {
+    #[cfg(target_os = "macos")]
+    {
+        // macOS: 使用osascript读取文件并复制到剪贴板
+        use std::process::Command;
+        use std::path::Path;
+        
+        let path = Path::new(&file_path);
+        let extension = path.extension()
+            .and_then(|s| s.to_str())
+            .unwrap_or("")
+            .to_lowercase();
+        
+        // 根据文件类型使用不同的类型标识
+        let type_class = match extension.as_str() {
+            "gif" => "GIFf",
+            "png" => "PNGf", 
+            "jpg" | "jpeg" => "JPEG",
+            _ => "PNGf",
+        };
+        
+        let script = format!(
+            r#"set the clipboard to (read (POSIX file "{}") as «class {}»)"#,
+            file_path, type_class
+        );
+        
+        let output = Command::new("osascript")
+            .arg("-e")
+            .arg(&script)
+            .output()
+            .map_err(|e| format!("Failed to execute osascript: {}", e))?;
+        
+        if !output.status.success() {
+            let error = String::from_utf8_lossy(&output.stderr);
+            return Err(format!("Failed to copy to clipboard: {}", error));
+        }
+        
+        Ok("success".to_string())
+    }
     
-    let path = Path::new(&file_path);
-    
-    // 读取文件数据
-    let file_data = fs::read(&file_path)
-        .map_err(|e| format!("Failed to read file: {}", e))?;
-    
-    let mut clipboard = Clipboard::new()
-        .map_err(|e| format!("Failed to access clipboard: {}", e))?;
-    
-    // 获取文件扩展名
-    let extension = path.extension()
-        .and_then(|s| s.to_str())
-        .unwrap_or("")
-        .to_lowercase();
-    
-    // 根据文件类型设置不同的MIME类型
-    let mime_type = match extension.as_str() {
-        "png" => "image/png",
-        "jpg" | "jpeg" => "image/jpeg",
-        "gif" => "image/gif",
-        "webp" => "image/webp",
-        "bmp" => "image/bmp",
-        _ => "image/png",
-    };
-    
-    // 尝试使用HTML格式复制（支持GIF动画）
-    let html = format!(
-        r#"<img src="data:{};base64,{}" />"#,
-        mime_type,
-        base64::encode(&file_data)
-    );
-    
-    // 设置HTML到剪贴板
-    clipboard.set_html(&html, Some(&html))
-        .map_err(|e| format!("Failed to copy as HTML: {}", e))?;
-    
-    Ok(())
+    #[cfg(not(target_os = "macos"))]
+    {
+        use std::path::Path;
+        
+        let path = Path::new(&file_path);
+        let extension = path.extension()
+            .and_then(|s| s.to_str())
+            .unwrap_or("")
+            .to_lowercase();
+        
+        // 读取并解码图片
+        let img = image::open(&file_path)
+            .map_err(|e| format!("Failed to open image: {}", e))?;
+        
+        // 转换为RGBA格式
+        let rgba = img.to_rgba8();
+        let (width, height) = rgba.dimensions();
+        
+        // 创建ImageData
+        let image_data = ImageData {
+            width: width as usize,
+            height: height as usize,
+            bytes: Cow::from(rgba.as_raw().as_slice()),
+        };
+        
+        // 复制到剪贴板
+        let mut clipboard = Clipboard::new()
+            .map_err(|e| format!("Failed to access clipboard: {}", e))?;
+        
+        clipboard.set_image(image_data)
+            .map_err(|e| format!("Failed to copy image: {}", e))?;
+        
+        // 如果是GIF，返回提示信息
+        if extension == "gif" {
+            Ok("gif_warning".to_string())
+        } else {
+            Ok("success".to_string())
+        }
+    }
 }
