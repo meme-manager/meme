@@ -2,4 +2,39 @@
   flex: 1;
   overflow-y: auto;
   background: #ffffff;
+  position: relative;
+}
+
+.main-content-dragging {
+  background: #f0f9ff;
+}
+
+.drag-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(59, 130, 246, 0.1);
+  border: 3px dashed #3b82f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.drag-overlay-content {
+  text-align: center;
+}
+
+.drag-overlay-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.drag-overlay-text {
+  font-size: 24px;
+  font-weight: 600;
+  color: #3b82f6;
 }
