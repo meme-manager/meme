@@ -1,0 +1,65 @@
+.drop-zone {
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  padding: 48px;
+  text-align: center;
+  transition: all 0.3s;
+  background: #f9fafb;
+}
+
+.drop-zone:hover {
+  border-color: #9ca3af;
+  background: #f3f4f6;
+}
+
+.drop-zone-active {
+  border-color: #3b82f6;
+  background: #dbeafe;
+}
+
+.drop-zone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.drop-zone-icon {
+  font-size: 64px;
+  opacity: 0.5;
+}
+
+.drop-zone-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.drop-zone-description {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.drop-zone-button {
+  display: inline-block;
+  padding: 10px 24px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.drop-zone-button:hover {
+  background: #2563eb;
+}
+
+.drop-zone-hint {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 0;
+}
