@@ -76,7 +76,7 @@ export function AssetDetail({ asset, open, onClose }: AssetDetailProps) {
     if (!asset) return;
     setLoading(true);
     try {
-      // 使用Tauri后端复制图片到剪贴板
+      // 使用Tauri后端复制图片到剪贴板（支持GIF动画）
       await invoke('copy_image_to_clipboard', { 
         filePath: asset.file_path 
       });
@@ -85,18 +85,10 @@ export function AssetDetail({ asset, open, onClose }: AssetDetailProps) {
       setMessage('✅ 已复制图片到剪贴板！现在可以粘贴到任何应用');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
-      console.error('Copy result:', error);
+      console.error('Copy failed:', error);
       const errorMsg = error instanceof Error ? error.message : String(error);
-      
-      // 检查是否是GIF的警告信息
-      if (errorMsg.includes('GIF动图')) {
-        await incrementUseCount(asset.id);
-        setMessage('⚠️ ' + errorMsg);
-        setTimeout(() => setMessage(''), 5000);
-      } else {
-        setMessage(`❌ 复制失败: ${errorMsg}`);
-        setTimeout(() => setMessage(''), 3000);
-      }
+      setMessage(`❌ 复制失败: ${errorMsg}`);
+      setTimeout(() => setMessage(''), 3000);
     } finally {
       setLoading(false);
     }
@@ -124,7 +116,6 @@ export function AssetDetail({ asset, open, onClose }: AssetDetailProps) {
   const imageSrc = convertFileSrc(asset.file_path);
   const assetTagIds = new Set(assetTags.map(t => t.id));
   const availableTags = allTags.filter(t => !assetTagIds.has(t.id));
-  const isGif = asset.mime_type === 'image/gif' || asset.file_name.toLowerCase().endsWith('.gif');
   
   return (
     <Dialog
@@ -138,19 +129,14 @@ export function AssetDetail({ asset, open, onClose }: AssetDetailProps) {
             <Button 
               onClick={handleCopyImage} 
               disabled={loading}
-              title={isGif ? 'GIF会被复制为静态图片，拖拽可保留动画' : '复制图片到剪贴板'}
+              title="复制图片到剪贴板（支持GIF动画）"
             >
-              📋 复制{isGif && ' (静态)'}
+              📋 复制
             </Button>
             <Button onClick={handleDelete} disabled={loading}>
               🗑️ 删除
             </Button>
-          </div>
-          {isGif && !message && (
-            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px' }}>
-              💡 提示：拖拽图片到其他应用可保留GIF动画效果
-            </div>
-          )} 
+          </div> 
           <Button onClick={onClose}>关闭</Button>
         </div>
       }
