@@ -7,6 +7,72 @@ use image::imageops::FilterType;
 use arboard::{Clipboard, ImageData};
 use std::borrow::Cow;
 
+#[cfg(target_os = "macos")]
+fn create_tiff_data(width: u32, height: u32, rgba_data: &[u8]) -> Vec<u8> {
+    // 简单的未压缩TIFF格式
+    let mut tiff = Vec::new();
+    
+    // TIFF Header (Little Endian)
+    tiff.extend_from_slice(&[0x49, 0x49]); // "II" - Little Endian
+    tiff.extend_from_slice(&[0x2A, 0x00]); // TIFF magic number
+    tiff.extend_from_slice(&[0x08, 0x00, 0x00, 0x00]); // Offset to first IFD
+    
+    // Image data starts at offset 8 + IFD size
+    let ifd_size = 2 + 12 * 11 + 4; // tag count + 11 tags * 12 bytes + next IFD offset
+    let data_offset = 8 + ifd_size;
+    
+    // IFD (Image File Directory)
+    tiff.extend_from_slice(&[0x0B, 0x00]); // 11 tags
+    
+    // Tag 1: ImageWidth
+    tiff.extend_from_slice(&[0x00, 0x01, 0x04, 0x00, 0x01, 0x00, 0x00, 0x00]);
+    tiff.extend_from_slice(&width.to_le_bytes());
+    
+    // Tag 2: ImageLength
+    tiff.extend_from_slice(&[0x01, 0x01, 0x04, 0x00, 0x01, 0x00, 0x00, 0x00]);
+    tiff.extend_from_slice(&height.to_le_bytes());
+    
+    // Tag 3: BitsPerSample (8,8,8,8 for RGBA)
+    tiff.extend_from_slice(&[0x02, 0x01, 0x03, 0x00, 0x04, 0x00, 0x00, 0x00]);
+    tiff.extend_from_slice(&[0x08, 0x00, 0x08, 0x00, 0x08, 0x00, 0x08, 0x00]);
+    
+    // Tag 4: Compression (1 = no compression)
+    tiff.extend_from_slice(&[0x03, 0x01, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00]);
+    
+    // Tag 5: PhotometricInterpretation (2 = RGB)
+    tiff.extend_from_slice(&[0x06, 0x01, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00]);
+    
+    // Tag 6: StripOffsets
+    tiff.extend_from_slice(&[0x11, 0x01, 0x04, 0x00, 0x01, 0x00, 0x00, 0x00]);
+    tiff.extend_from_slice(&data_offset.to_le_bytes());
+    
+    // Tag 7: SamplesPerPixel (4 for RGBA)
+    tiff.extend_from_slice(&[0x15, 0x01, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00]);
+    
+    // Tag 8: RowsPerStrip
+    tiff.extend_from_slice(&[0x16, 0x01, 0x04, 0x00, 0x01, 0x00, 0x00, 0x00]);
+    tiff.extend_from_slice(&height.to_le_bytes());
+    
+    // Tag 9: StripByteCounts
+    let byte_count = (width * height * 4) as u32;
+    tiff.extend_from_slice(&[0x17, 0x01, 0x04, 0x00, 0x01, 0x00, 0x00, 0x00]);
+    tiff.extend_from_slice(&byte_count.to_le_bytes());
+    
+    // Tag 10: PlanarConfiguration (1 = chunky)
+    tiff.extend_from_slice(&[0x1C, 0x01, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00]);
+    
+    // Tag 11: ExtraSamples (2 = unassociated alpha)
+    tiff.extend_from_slice(&[0x52, 0x01, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00]);
+    
+    // Next IFD offset (0 = no more IFDs)
+    tiff.extend_from_slice(&[0x00, 0x00, 0x00, 0x00]);
+    
+    // Image data
+    tiff.extend_from_slice(rgba_data);
+    
+    tiff
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ThumbnailSizes {
     pub small: u32,
@@ -174,32 +240,64 @@ pub async fn copy_image_to_clipboard(
             // 清空剪贴板
             let _: () = msg_send![pasteboard, clearContents];
             
-            // 根据文件扩展名设置正确的UTI类型
+            // 根据文件扩展名设置正确的剪贴板类型
             let path = std::path::Path::new(&file_path);
             let extension = path.extension()
                 .and_then(|s| s.to_str())
                 .unwrap_or("")
                 .to_lowercase();
             
-            let uti_type = match extension.as_str() {
-                "gif" => "com.compuserve.gif",
-                "png" => "public.png",
-                "jpg" | "jpeg" => "public.jpeg",
-                "webp" => "org.webmproject.webp",
-                _ => "public.png",
-            };
-            
-            // 创建NSString类型
-            let ns_type = NSString::alloc(nil);
-            let ns_type = NSString::init_str(ns_type, uti_type);
-            
-            // 设置数据到剪贴板
-            let success: bool = msg_send![pasteboard, setData:ns_data forType:ns_type];
-            
-            if success {
+            // 对于GIF，同时提供GIF数据和TIFF数据
+            if extension == "gif" {
+                // 1. 先设置GIF数据（支持动画的应用会使用这个）
+                let gif_type = NSString::alloc(nil);
+                let gif_type = NSString::init_str(gif_type, "com.compuserve.gif");
+                let _: bool = msg_send![pasteboard, setData:ns_data forType:gif_type];
+                
+                // 2. 再添加TIFF数据作为备选（不支持GIF的应用会使用这个）
+                // 使用image库读取第一帧
+                let img = image::open(&file_path)
+                    .map_err(|e| format!("Failed to open GIF: {}", e))?;
+                let rgba = img.to_rgba8();
+                let (width, height) = rgba.dimensions();
+                
+                let image_data = ImageData {
+                    width: width as usize,
+                    height: height as usize,
+                    bytes: Cow::from(rgba.as_raw().as_slice()),
+                };
+                
+                // 转换为TIFF格式（macOS剪贴板的标准格式）
+                let tiff_type = NSString::alloc(nil);
+                let tiff_type = NSString::init_str(tiff_type, "public.tiff");
+                
+                // 创建TIFF数据
+                let tiff_data = create_tiff_data(width, height, rgba.as_raw());
+                let ns_tiff_data: id = NSData::dataWithBytes_length_(
+                    nil,
+                    tiff_data.as_ptr() as *const std::ffi::c_void,
+                    tiff_data.len() as u64,
+                );
+                let _: bool = msg_send![pasteboard, setData:ns_tiff_data forType:tiff_type];
+                
                 Ok("success".to_string())
             } else {
-                Err("Failed to set clipboard data".to_string())
+                // 对于其他格式，直接设置原始数据
+                let uti_type = match extension.as_str() {
+                    "png" => "public.png",
+                    "jpg" | "jpeg" => "public.jpeg",
+                    _ => "public.png",
+                };
+                
+                let ns_type = NSString::alloc(nil);
+                let ns_type = NSString::init_str(ns_type, uti_type);
+                let success: bool = msg_send![pasteboard, setData:ns_data forType:ns_type];
+                
+                if success {
+                    Ok("success".to_string())
+                } else {
+                    Err("Failed to set clipboard data".to_string())
+                }
             }
         }
     }
