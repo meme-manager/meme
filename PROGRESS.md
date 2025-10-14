@@ -97,6 +97,7 @@
 - ✅ 修复Rust编译错误（缺少Manager导入）
 - ✅ 修复生命周期问题（PathBuf临时值）
 - ✅ 修复SQL权限问题（添加sql:allow-load等权限）
+- ✅ 修复图片无法显示（使用convertFileSrc转换路径）
 
 ### 💡 心得体会
 - 简化架构后思路更清晰

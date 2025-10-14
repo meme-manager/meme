@@ -46,6 +46,8 @@ export function DropZone() {
         source_platform: 'file',
       });
     }
+    // 重置input，允许再次选择相同文件
+    e.target.value = '';
   };
 
   return (
