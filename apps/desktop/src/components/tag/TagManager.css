@@ -1,0 +1,130 @@
+.tag-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.tag-create h3,
+.tag-list h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 12px 0;
+}
+
+.tag-create {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.color-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.color-picker label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 8px;
+}
+
+.color-option {
+  width: 32px;
+  height: 32px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.color-option:hover {
+  transform: scale(1.1);
+}
+
+.color-option.selected {
+  border-color: #111827;
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #111827;
+}
+
+.tag-list {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 24px;
+}
+
+.loading,
+.empty {
+  text-align: center;
+  padding: 24px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.tags {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tag-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.tag-item:hover {
+  background: #f3f4f6;
+}
+
+.tag-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tag-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+}
+
+.tag-count {
+  font-size: 12px;
+  color: #6b7280;
+  background: #e5e7eb;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.tag-delete {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.tag-delete:hover {
+  background: #ef4444;
+  color: white;
+}
