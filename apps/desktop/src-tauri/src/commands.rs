@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use std::collections::HashMap;
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, Digest};
 use image::imageops::FilterType;
@@ -29,7 +29,8 @@ pub async fn save_asset_file(
     std::fs::create_dir_all(&assets_dir)
         .map_err(|e| format!("Failed to create assets dir: {}", e))?;
     
-    let extension = PathBuf::from(&file_name)
+    let path_buf = PathBuf::from(&file_name);
+    let extension = path_buf
         .extension()
         .and_then(|s| s.to_str())
         .unwrap_or("png");
@@ -61,7 +62,8 @@ pub async fn generate_thumbnails(
     let img = image::open(&source_path)
         .map_err(|e| format!("Failed to open image: {}", e))?;
     
-    let hash = PathBuf::from(&source_path)
+    let source_path_buf = PathBuf::from(&source_path);
+    let hash = source_path_buf
         .file_stem()
         .and_then(|s| s.to_str())
         .ok_or("Invalid file name")?;
