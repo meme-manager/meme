@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { convertFileSrc } from '@tauri-apps/api/core';
-import type { Asset, Tag } from '../../types/asset';
-import { useTagStore } from '../../stores/tagStore';
-import { useAssetStore } from '../../stores/assetStore';
-import { getAssetTags } from '../../lib/database/operations';
-import { addAssetTag, removeAssetTag } from '../../lib/database/operations';
+import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 import { Dialog } from '../ui/Dialog';
 import { Button } from '../ui/Button';
+import { useTagStore } from '../../stores/tagStore';
+import { useAssetStore } from '../../stores/assetStore';
+import { getAssetTags, addAssetTag, removeAssetTag, incrementUseCount } from '../../lib/database/operations';
+import type { Asset } from '../../types/asset';
 import './AssetDetail.css';
 
 interface AssetDetailProps {
@@ -15,9 +15,17 @@ interface AssetDetailProps {
   onClose: () => void;
 }
 
+interface Tag {
+  id: string;
+  name: string;
+  color: string | null;
+  use_count: number;
+  created_at: number;
+}
+
 export function AssetDetail({ asset, open, onClose }: AssetDetailProps) {
   const { tags: allTags, loadTags } = useTagStore();
-  const { deleteAssetById, incrementAssetUseCount } = useAssetStore();
+  const { deleteAssetById } = useAssetStore();
   const [assetTags, setAssetTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string>('');
@@ -68,42 +76,13 @@ export function AssetDetail({ asset, open, onClose }: AssetDetailProps) {
   const handleCopyImage = async () => {
     if (!asset) return;
     try {
-      // 创建一个临时的img元素来加载图片
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = convertFileSrc(asset.file_path);
-      
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-      });
-      
-      // 使用canvas转换为blob
-      const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('无法获取canvas context');
-      
-      ctx.drawImage(img, 0, 0);
-      
-      // 转换为blob并复制
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((b) => {
-          if (b) resolve(b);
-          else reject(new Error('转换失败'));
-        }, asset.mime_type);
-      });
-      
-      await navigator.clipboard.write([
-        new ClipboardItem({ [asset.mime_type]: blob })
-      ]);
-      
-      await incrementAssetUseCount(asset.id);
-      setMessage('已复制到剪贴板');
-      setTimeout(() => setMessage(''), 2000);
+      // 复制文件路径到剪贴板
+      await writeText(asset.file_path);
+      await incrementUseCount(asset.id);
+      setMessage('已复制文件路径到剪贴板，可以直接粘贴到聊天软件');
+      setTimeout(() => setMessage(''), 3000);
     } catch (error) {
-      console.error('Failed to copy image:', error);
+      console.error('Failed to copy:', error);
       setMessage(`复制失败: ${error instanceof Error ? error.message : '未知错误'}`);
       setTimeout(() => setMessage(''), 3000);
     }

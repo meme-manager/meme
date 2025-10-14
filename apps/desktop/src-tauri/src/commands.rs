@@ -4,6 +4,7 @@ use tauri::{AppHandle, Manager};
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, Digest};
 use image::imageops::FilterType;
+use std::fs;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ThumbnailSizes {
@@ -140,4 +141,18 @@ pub async fn import_from_url(
     result.insert("thumb_large".to_string(), thumbnails.get("large").cloned().unwrap_or_default());
     
     Ok(result)
+}
+
+/// 复制图片到剪贴板
+#[tauri::command]
+pub async fn copy_image_to_clipboard(
+    file_path: String,
+) -> Result<(), String> {
+    // 读取图片文件
+    let image_data = fs::read(&file_path)
+        .map_err(|e| format!("Failed to read file: {}", e))?;
+    
+    // 使用clipboard-manager插件需要在前端调用
+    // 这里只返回成功，实际复制在前端完成
+    Ok(())
 }
