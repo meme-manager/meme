@@ -54,7 +54,19 @@ export async function searchAssets(
   
   // 应用筛选器
   if (filters?.tags && filters.tags.length > 0) {
-    // TODO: 实现标签筛选
+    const { getAssetTags } = await import('./database/operations');
+    const tagFilteredAssets: Asset[] = [];
+    
+    for (const asset of results) {
+      const assetTags = await getAssetTags(asset.id);
+      const assetTagIds = assetTags.map(t => t.id);
+      const hasMatchingTag = filters.tags.some(tagId => assetTagIds.includes(tagId));
+      if (hasMatchingTag) {
+        tagFilteredAssets.push(asset);
+      }
+    }
+    
+    results = tagFilteredAssets;
   }
   
   if (filters?.mimeTypes && filters.mimeTypes.length > 0) {

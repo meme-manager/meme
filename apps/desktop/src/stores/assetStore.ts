@@ -82,7 +82,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
       // 导入文件
       const results = await importAssets(files, {
         ...options,
-        onProgress: (current, total) => {
+        onProgress: (current) => {
           const taskId = taskIds[current - 1];
           if (taskId) {
             progressStore.updateTask(taskId, {

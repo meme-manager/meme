@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useSearchStore } from '../../stores/searchStore';
 import { useAssetStore } from '../../stores/assetStore';
 import { ImportUrlDialog } from '../import/ImportUrlDialog';
+import { FilterPanel } from '../search/FilterPanel';
 import './Header.css';
 
 export function Header() {
@@ -9,6 +10,7 @@ export function Header() {
   const { importMultipleAssets } = useAssetStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showUrlDialog, setShowUrlDialog] = useState(false);
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
   
   const handleImportClick = () => {
     fileInputRef.current?.click();
@@ -31,13 +33,22 @@ export function Header() {
       </div>
       
       <div className="header-center">
-        <input
-          type="text"
-          className="search-input"
-          placeholder="搜索表情包..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+        <div className="search-wrapper">
+          <input
+            type="text"
+            className="search-input"
+            placeholder="搜索表情包（支持拼音）..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <button 
+            className="search-filter-btn" 
+            onClick={() => setShowFilterPanel(true)}
+            title="高级筛选"
+          >
+            🔍
+          </button>
+        </div>
       </div>
       
       <div className="header-right">
@@ -63,6 +74,11 @@ export function Header() {
       <ImportUrlDialog
         open={showUrlDialog}
         onClose={() => setShowUrlDialog(false)}
+      />
+      
+      <FilterPanel
+        open={showFilterPanel}
+        onClose={() => setShowFilterPanel(false)}
       />
     </header>
   );

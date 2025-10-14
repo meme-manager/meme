@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTagStore } from '../../stores/tagStore';
+import { useSearchStore } from '../../stores/searchStore';
 import { useAssetStore } from '../../stores/assetStore';
 import { TagManager } from '../tag/TagManager';
 import './Sidebar.css';
@@ -7,11 +8,24 @@ import './Sidebar.css';
 export function Sidebar() {
   const { tags, loadTags } = useTagStore();
   const { assets } = useAssetStore();
+  const { setFilters } = useSearchStore();
   const [showTagManager, setShowTagManager] = useState(false);
+  const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
   
   useEffect(() => {
     loadTags();
   }, [loadTags]);
+  
+  const handleTagClick = (tagId: string) => {
+    // 切换标签选中状态
+    if (selectedTagId === tagId) {
+      setSelectedTagId(null);
+      setFilters({});
+    } else {
+      setSelectedTagId(tagId);
+      setFilters({ tags: [tagId] });
+    }
+  };
   
   return (
     <>
@@ -68,11 +82,8 @@ export function Sidebar() {
               {tags.slice(0, 10).map(tag => (
                 <li 
                   key={tag.id} 
-                  className="nav-item"
-                  onClick={() => {
-                    // TODO: 实现标签筛选
-                    console.log('Filter by tag:', tag.name);
-                  }}
+                  className={`nav-item ${selectedTagId === tag.id ? 'active' : ''}`}
+                  onClick={() => handleTagClick(tag.id)}
                 >
                   <span
                     className="nav-tag"
