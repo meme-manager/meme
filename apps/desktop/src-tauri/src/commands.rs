@@ -149,24 +149,56 @@ pub async fn import_from_url(
 pub async fn copy_image_to_clipboard(
     file_path: String,
 ) -> Result<(), String> {
-    // 读取图片文件
+    use std::fs;
+    
+    // 检查文件扩展名
+    let path = std::path::Path::new(&file_path);
+    let extension = path.extension()
+        .and_then(|s| s.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+    
+    let mut clipboard = Clipboard::new()
+        .map_err(|e| format!("Failed to access clipboard: {}", e))?;
+    
+    // 对于GIF，尝试直接复制文件数据（某些系统支持）
+    if extension == "gif" {
+        // 方案1: 尝试使用HTML格式（某些应用支持）
+        // 但arboard不直接支持HTML，所以我们还是要转换为静态图片
+        // 或者我们可以提示用户使用拖拽功能
+        
+        // 读取GIF并获取第一帧作为预览
+        let img = image::open(&file_path)
+            .map_err(|e| format!("Failed to open GIF: {}", e))?;
+        
+        let rgba = img.to_rgba8();
+        let (width, height) = rgba.dimensions();
+        
+        let image_data = ImageData {
+            width: width as usize,
+            height: height as usize,
+            bytes: Cow::from(rgba.as_raw().as_slice()),
+        };
+        
+        clipboard.set_image(image_data)
+            .map_err(|e| format!("Failed to copy image: {}", e))?;
+        
+        // 返回警告信息
+        return Err("GIF动图已复制为静态图片。提示：使用拖拽功能可保留动画效果！".to_string());
+    }
+    
+    // 对于静态图片（PNG、JPEG等）
     let img = image::open(&file_path)
         .map_err(|e| format!("Failed to open image: {}", e))?;
     
-    // 转换为RGBA格式
     let rgba = img.to_rgba8();
     let (width, height) = rgba.dimensions();
     
-    // 创建ImageData
     let image_data = ImageData {
         width: width as usize,
         height: height as usize,
         bytes: Cow::from(rgba.as_raw().as_slice()),
     };
-    
-    // 复制到剪贴板
-    let mut clipboard = Clipboard::new()
-        .map_err(|e| format!("Failed to access clipboard: {}", e))?;
     
     clipboard.set_image(image_data)
         .map_err(|e| format!("Failed to copy image: {}", e))?;
