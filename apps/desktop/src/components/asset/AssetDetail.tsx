@@ -76,11 +76,23 @@ export function AssetDetail({ asset, open, onClose }: AssetDetailProps) {
   const handleCopyImage = async () => {
     if (!asset) return;
     try {
-      // 复制文件路径到剪贴板
-      await writeText(asset.file_path);
-      await incrementUseCount(asset.id);
-      setMessage('已复制文件路径到剪贴板，可以直接粘贴到聊天软件');
-      setTimeout(() => setMessage(''), 3000);
+      // 方案1: 尝试复制图片到剪贴板（可能不被所有应用支持）
+      const response = await fetch(convertFileSrc(asset.file_path));
+      const blob = await response.blob();
+      
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({ [blob.type]: blob })
+        ]);
+        await incrementUseCount(asset.id);
+        setMessage('✅ 已复制图片，可以粘贴到支持的应用（如微信、QQ等）');
+      } catch (clipError) {
+        // 如果剪贴板API失败，复制文件路径作为备选
+        await writeText(asset.file_path);
+        setMessage('⚠️ 已复制文件路径。提示：可以直接拖拽图片到其他应用！');
+      }
+      
+      setTimeout(() => setMessage(''), 4000);
     } catch (error) {
       console.error('Failed to copy:', error);
       setMessage(`复制失败: ${error instanceof Error ? error.message : '未知错误'}`);
