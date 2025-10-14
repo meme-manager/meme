@@ -4,7 +4,7 @@
  */
 
 import type { Context, Next } from 'hono';
-import type { Env } from '../index';
+import type { AppEnv } from '../index';
 
 // 限流配置
 interface RateLimitConfig {
@@ -46,7 +46,7 @@ export function createRateLimit(config: RateLimitConfig) {
     skipFailedRequests = false
   } = config;
 
-  return async (c: Context<{ Bindings: Env }>, next: Next) => {
+  return async (c: Context<{ Bindings: AppEnv }>, next: Next) => {
     const key = keyGenerator(c);
     const now = Date.now();
     

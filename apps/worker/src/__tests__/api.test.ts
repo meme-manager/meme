@@ -29,7 +29,7 @@ describe('API Routes', () => {
       
       expect(res.status).toBe(200);
       
-      const data = await res.json();
+      const data = await res.json() as { status: string; environment: string; version: string; timestamp: number };
       expect(data).toMatchObject({
         status: 'ok',
         environment: 'development',
@@ -46,8 +46,8 @@ describe('API Routes', () => {
       
       expect(res.status).toBe(401);
       
-      const data = await res.json();
-      expect(data.error).toBe('Unauthorized');
+      const data = await res.json() as { error: string; message?: string };
+      expect((data as any).error).toBe('Unauthorized');
     });
 
     it('should handle POST /api/index/batch with authentication required', async () => {
@@ -84,10 +84,10 @@ describe('API Routes', () => {
       const res = await app.fetch(req, mockEnv);
       expect(res.status).toBe(200);
       
-      const data = await res.json();
-      expect(data).toHaveProperty('token');
-      expect(data).toHaveProperty('deviceId', 'test-device-123');
-      expect(data).toHaveProperty('userId', 'test-user-456');
+      const data = await res.json() as { token: string; deviceId: string; userId: string };
+      expect((data as any)).toHaveProperty('token');
+      expect((data as any)).toHaveProperty('deviceId', 'test-device-123');
+      expect((data as any)).toHaveProperty('userId', 'test-user-456');
     });
 
     it('should validate device registration input', async () => {
@@ -105,9 +105,9 @@ describe('API Routes', () => {
       const res = await app.fetch(req, mockEnv);
       expect(res.status).toBe(400);
       
-      const data = await res.json();
-      expect(data.error).toBe('Invalid request body');
-      expect(data.details).toBeDefined();
+      const data = await res.json() as { error: string; details?: unknown };
+      expect((data as any).error).toBe('Invalid request body');
+      expect((data as any).details).toBeDefined();
     });
   });
 
@@ -118,9 +118,9 @@ describe('API Routes', () => {
       
       expect(res.status).toBe(404);
       
-      const data = await res.json();
-      expect(data.error).toBe('Not Found');
-      expect(data.path).toBe('/unknown-route');
+      const data = await res.json() as { error: string; path: string };
+      expect((data as any).error).toBe('Not Found');
+      expect((data as any).path).toBe('/unknown-route');
     });
   });
 });

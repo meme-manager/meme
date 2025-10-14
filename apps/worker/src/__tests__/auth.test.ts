@@ -60,14 +60,14 @@ describe('Authentication and Rate Limiting - Task 2.3', () => {
       const res = await app.fetch(req, mockEnv);
       expect(res.status).toBe(200);
       
-      const data = await res.json();
-      expect(data).toHaveProperty('token');
-      expect(data).toHaveProperty('deviceId', 'test-device-12345678');
-      expect(data).toHaveProperty('userId', 'test-user-123');
-      expect(data).toHaveProperty('expiresAt');
-      expect(data).toHaveProperty('serverTimestamp');
-      expect(typeof data.token).toBe('string');
-      expect(data.token.length).toBeGreaterThan(0);
+      const data = await res.json() as { token: string; deviceId: string; userId: string; expiresAt: number; serverTimestamp: number };
+      expect((data as any)).toHaveProperty('token');
+      expect((data as any)).toHaveProperty('deviceId', 'test-device-12345678');
+      expect((data as any)).toHaveProperty('userId', 'test-user-123');
+      expect((data as any)).toHaveProperty('expiresAt');
+      expect((data as any)).toHaveProperty('serverTimestamp');
+      expect(typeof (data as any).token).toBe('string');
+      expect((data as any).token.length).toBeGreaterThan(0);
     });
 
     it('should validate device registration input', async () => {
@@ -118,8 +118,8 @@ describe('Authentication and Rate Limiting - Task 2.3', () => {
         const res = await app.fetch(req, mockEnv);
         expect(res.status).toBe(testCase.expectedStatus);
         
-        const data = await res.json();
-        expect(data.error).toBeDefined();
+        const data = await res.json() as { error: string; message?: string; details?: unknown };
+        expect((data as any).error).toBeDefined();
       }
     });
 
@@ -147,9 +147,9 @@ describe('Authentication and Rate Limiting - Task 2.3', () => {
         const res = await app.fetch(req, mockEnv);
         expect(res.status).toBe(400);
         
-        const data = await res.json();
-        expect(data.error).toBe('Bad Request');
-        expect(data.message).toContain('Device ID must be between');
+        const data = await res.json() as { error: string; message: string };
+        expect((data as any).error).toBe('Bad Request');
+        expect((data as any).message).toContain('Device ID must be between');
       }
     });
   });
@@ -185,9 +185,9 @@ describe('Authentication and Rate Limiting - Task 2.3', () => {
       // 后续请求应该被限流
       const lastResponse = responses[responses.length - 1];
       if (lastResponse.status === 429) {
-        const data = await lastResponse.json();
-        expect(data.error).toBe('Too Many Requests');
-        expect(data.retryAfter).toBeTypeOf('number');
+        const data = await lastResponse.json() as { error: string; retryAfter: number };
+        expect((data as any).error).toBe('Too Many Requests');
+        expect((data as any).retryAfter).toBeTypeOf('number');
         
         // 检查限流头部
         expect(lastResponse.headers.get('Retry-After')).toBeDefined();
@@ -240,9 +240,9 @@ describe('Authentication and Rate Limiting - Task 2.3', () => {
         
         expect(res.status).toBe(401);
         
-        const data = await res.json();
-        expect(data.error).toBe('Unauthorized');
-        expect(data.message).toContain('authorization header');
+        const data = await res.json() as { error: string; message?: string };
+        expect((data as any).error).toBe('Unauthorized');
+        expect((data as any).message).toContain('authorization header');
       }
     });
 
@@ -262,8 +262,8 @@ describe('Authentication and Rate Limiting - Task 2.3', () => {
         const res = await app.fetch(req, mockEnv);
         expect(res.status).toBe(401);
         
-        const data = await res.json();
-        expect(data.error).toBe('Unauthorized');
+        const data = await res.json() as { error: string; message?: string };
+        expect((data as any).error).toBe('Unauthorized');
       }
     });
   });
@@ -288,7 +288,7 @@ describe('Authentication and Rate Limiting - Task 2.3', () => {
       const registerRes = await app.fetch(registerReq, mockEnv);
       expect(registerRes.status).toBe(200);
       
-      const { token } = await registerRes.json();
+      const { token } = await registerRes.json() as { token: string };
       
       // 尝试刷新 token
       const refreshReq = new Request('http://localhost/api/auth/refresh', {
@@ -299,11 +299,11 @@ describe('Authentication and Rate Limiting - Task 2.3', () => {
       const refreshRes = await app.fetch(refreshReq, mockEnv);
       expect(refreshRes.status).toBe(200);
       
-      const refreshData = await refreshRes.json();
-      expect(refreshData).toHaveProperty('token');
-      expect(refreshData).toHaveProperty('expiresAt');
-      expect(typeof refreshData.token).toBe('string');
-      expect(refreshData.token.length).toBeGreaterThan(0);
+      const refreshData = await refreshRes.json() as { token: string; expiresAt: number };
+      expect((refreshData as any)).toHaveProperty('token');
+      expect((refreshData as any)).toHaveProperty('expiresAt');
+      expect(typeof (refreshData as any).token).toBe('string');
+      expect((refreshData as any).token.length).toBeGreaterThan(0);
       // 注意：在测试环境中，由于时间戳可能相同，token 可能相同，这是正常的
     });
   });
@@ -328,7 +328,7 @@ describe('Authentication and Rate Limiting - Task 2.3', () => {
       const registerRes = await app.fetch(registerReq, mockEnv);
       expect(registerRes.status).toBe(200);
       
-      const { token } = await registerRes.json();
+      const { token } = await registerRes.json() as { token: string };
       
       // 获取设备列表
       const devicesReq = new Request('http://localhost/api/auth/devices', {
@@ -338,9 +338,9 @@ describe('Authentication and Rate Limiting - Task 2.3', () => {
       const devicesRes = await app.fetch(devicesReq, mockEnv);
       expect(devicesRes.status).toBe(200);
       
-      const devicesData = await devicesRes.json();
-      expect(devicesData).toHaveProperty('devices');
-      expect(Array.isArray(devicesData.devices)).toBe(true);
+      const devicesData = await devicesRes.json() as { devices: unknown[] };
+      expect((devicesData as any)).toHaveProperty('devices');
+      expect(Array.isArray((devicesData as any).devices)).toBe(true);
     });
   });
 });

@@ -7,9 +7,9 @@ import { Hono } from 'hono';
 import { validator } from 'hono/validator';
 import { z } from 'zod';
 import { sign, verify } from 'hono/jwt';
-import type { Env } from '../index';
+import type { AppEnv } from '../index';
 
-const authRouter = new Hono<{ Bindings: Env }>();
+const authRouter = new Hono<{ Bindings: AppEnv }>();
 
 const DeviceRegistrationSchema = z.object({
   deviceId: z.string().min(1),
@@ -53,13 +53,13 @@ authRouter.post('/device-begin',
       }
 
       // 检查用户是否存在，不存在则创建
-      let user = await c.env.DB.prepare(
+      let user = await c.env.Bindings.DB.prepare(
         'SELECT userId, isActive FROM users WHERE userId = ?'
       ).bind(userId).first();
 
       if (!user) {
         // 创建新用户
-        await c.env.DB.prepare(`
+        await c.env.Bindings.DB.prepare(`
           INSERT INTO users (userId, plan, createdAt, updatedAt, isActive)
           VALUES (?, 'free', ?, ?, 1)
         `).bind(userId, Date.now(), Date.now()).run();
@@ -73,7 +73,7 @@ authRouter.post('/device-begin',
       }
 
       // 检查设备是否已注册
-      let device = await c.env.DB.prepare(
+      let device = await c.env.Bindings.DB.prepare(
         'SELECT id, userId, isActive, registeredAt FROM devices WHERE id = ?'
       ).bind(deviceId).first();
 
@@ -90,7 +90,7 @@ authRouter.post('/device-begin',
         }
 
         // 更新设备信息
-        await c.env.DB.prepare(`
+        await c.env.Bindings.DB.prepare(`
           UPDATE devices SET 
             name = ?, type = ?, platform = ?, version = ?,
             lastSeenAt = ?, isActive = 1
@@ -100,11 +100,12 @@ authRouter.post('/device-begin',
         console.log(`Device updated: ${deviceId} for user ${userId}`);
       } else {
         // 检查用户设备数量限制（免费用户最多 3 台设备）
-        const deviceCount = await c.env.DB.prepare(
+        const deviceCount = await c.env.Bindings.DB.prepare(
           'SELECT COUNT(*) as count FROM devices WHERE userId = ? AND isActive = 1'
-        ).bind(userId).first();
+        ).bind(userId).first<{ count: number }>();
 
-        if (deviceCount && deviceCount.count >= 3) {
+        const count = Number(deviceCount?.count ?? 0);
+        if (count >= 3) {
           return c.json({
             error: 'Forbidden',
             message: 'Maximum number of devices reached (3 devices per user)'
@@ -112,7 +113,7 @@ authRouter.post('/device-begin',
         }
 
         // 创建新设备记录
-        await c.env.DB.prepare(`
+        await c.env.Bindings.DB.prepare(`
           INSERT INTO devices (
             id, userId, name, type, platform, version,
             registeredAt, lastSeenAt, isActive
@@ -132,7 +133,13 @@ authRouter.post('/device-begin',
         exp: Math.floor((now + tokenExpiry) / 1000)
       };
 
-      const token = await sign(payload, c.env.JWT_SECRET);
+      if (!c.env.Bindings.JWT_SECRET) {
+        return c.json({
+          error: 'Internal Server Error',
+          message: 'Server JWT secret is not configured'
+        }, 500);
+      }
+      const token = await sign(payload, c.env.Bindings.JWT_SECRET);
 
       // 记录认证日志
       console.log(`Token issued for device ${deviceId}, user ${userId}, expires at ${new Date(payload.exp * 1000).toISOString()}`);
@@ -168,11 +175,17 @@ authRouter.post('/refresh', async (c) => {
   }
 
   try {
-    const token = authHeader.substring(7);
-    const payload = await verify(token, c.env.JWT_SECRET);
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined;
+    if (!token || !c.env.Bindings.JWT_SECRET) {
+      return c.json({ 
+        error: 'Unauthorized',
+        message: 'Missing token or server secret' 
+      }, 401);
+    }
+    const payload = await verify(token, c.env.Bindings.JWT_SECRET);
     
     // 验证设备是否仍然活跃
-    const device = await c.env.DB.prepare(
+    const device = await c.env.Bindings.DB.prepare(
       'SELECT id, userId, isActive FROM devices WHERE id = ? AND userId = ?'
     ).bind(payload.deviceId, payload.userId).first();
 
@@ -194,10 +207,10 @@ authRouter.post('/refresh', async (c) => {
       exp: Math.floor((now + tokenExpiry) / 1000)
     };
 
-    const newToken = await sign(newPayload, c.env.JWT_SECRET);
+    const newToken = await sign(newPayload, c.env.Bindings.JWT_SECRET);
 
     // 更新设备最后活跃时间
-    await c.env.DB.prepare(
+    await c.env.Bindings.DB.prepare(
       'UPDATE devices SET lastSeenAt = ? WHERE id = ?'
     ).bind(now, payload.deviceId).run();
 
@@ -229,11 +242,17 @@ authRouter.get('/devices', async (c) => {
   }
 
   try {
-    const token = authHeader.substring(7);
-    const payload = await verify(token, c.env.JWT_SECRET);
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined;
+    if (!token || !c.env.Bindings.JWT_SECRET) {
+      return c.json({ 
+        error: 'Unauthorized',
+        message: 'Missing token or server secret' 
+      }, 401);
+    }
+    const payload = await verify(token, c.env.Bindings.JWT_SECRET);
 
     // 获取用户的所有设备
-    const devices = await c.env.DB.prepare(`
+    const devices = await c.env.Bindings.DB.prepare(`
       SELECT 
         id, name, type, platform, version,
         registeredAt, lastSeenAt, isActive
@@ -270,12 +289,24 @@ authRouter.delete('/device/:deviceId', async (c) => {
   }
 
   try {
-    const token = authHeader.substring(7);
-    const payload = await verify(token, c.env.JWT_SECRET);
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined;
+    if (!token || !c.env.Bindings.JWT_SECRET) {
+      return c.json({ 
+        error: 'Unauthorized',
+        message: 'Missing token or server secret' 
+      }, 401);
+    }
+    const payload = await verify(token, c.env.Bindings.JWT_SECRET);
     const targetDeviceId = c.req.param('deviceId');
+    if (!targetDeviceId) {
+      return c.json({
+        error: 'Bad Request',
+        message: 'Missing required path parameter: deviceId'
+      }, 400);
+    }
 
     // 验证设备所有权
-    const device = await c.env.DB.prepare(
+    const device = await c.env.Bindings.DB.prepare(
       'SELECT id, userId FROM devices WHERE id = ? AND userId = ?'
     ).bind(targetDeviceId, payload.userId).first();
 
@@ -295,7 +326,7 @@ authRouter.delete('/device/:deviceId', async (c) => {
     }
 
     // 注销设备
-    await c.env.DB.prepare(
+    await c.env.Bindings.DB.prepare(
       'UPDATE devices SET isActive = 0 WHERE id = ?'
     ).bind(targetDeviceId).run();
 

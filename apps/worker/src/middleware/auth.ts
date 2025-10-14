@@ -4,9 +4,11 @@
 
 import { verify } from 'hono/jwt';
 import type { Context, Next } from 'hono';
-import type { Env } from '../index';
+import type { Bindings } from '../index';
 
-export async function authMiddleware(c: Context<{ Bindings: Env }>, next: Next) {
+type Vars = { userId: string; deviceId: string; deviceType: string };
+
+export async function authMiddleware(c: Context<{ Bindings: Bindings; Variables: Vars }>, next: Next) {
   const authHeader = c.req.header('Authorization');
   
   if (!authHeader?.startsWith('Bearer ')) {
@@ -17,7 +19,13 @@ export async function authMiddleware(c: Context<{ Bindings: Env }>, next: Next) 
   }
 
   try {
-    const token = authHeader.substring(7);
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : undefined;
+    if (!token || !c.env.JWT_SECRET) {
+      return c.json({
+        error: 'Unauthorized',
+        message: 'Missing token or server secret'
+      }, 401);
+    }
     const payload = await verify(token, c.env.JWT_SECRET);
     
     // 验证设备是否仍然活跃
