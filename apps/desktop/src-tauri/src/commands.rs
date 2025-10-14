@@ -151,41 +151,58 @@ pub async fn copy_image_to_clipboard(
 ) -> Result<String, String> {
     #[cfg(target_os = "macos")]
     {
-        // macOS: 使用osascript读取文件并复制到剪贴板
-        use std::process::Command;
-        use std::path::Path;
+        use std::fs;
+        use cocoa::base::{nil, id};
+        use cocoa::foundation::{NSData, NSString};
+        use cocoa::appkit::NSPasteboard;
+        use objc::{msg_send, sel, sel_impl};
         
-        let path = Path::new(&file_path);
-        let extension = path.extension()
-            .and_then(|s| s.to_str())
-            .unwrap_or("")
-            .to_lowercase();
-        
-        // 根据文件类型使用不同的类型标识
-        let type_class = match extension.as_str() {
-            "gif" => "GIFf",
-            "png" => "PNGf", 
-            "jpg" | "jpeg" => "JPEG",
-            _ => "PNGf",
-        };
-        
-        let script = format!(
-            r#"set the clipboard to (read (POSIX file "{}") as «class {}»)"#,
-            file_path, type_class
-        );
-        
-        let output = Command::new("osascript")
-            .arg("-e")
-            .arg(&script)
-            .output()
-            .map_err(|e| format!("Failed to execute osascript: {}", e))?;
-        
-        if !output.status.success() {
-            let error = String::from_utf8_lossy(&output.stderr);
-            return Err(format!("Failed to copy to clipboard: {}", error));
+        unsafe {
+            // 读取文件数据
+            let file_data = fs::read(&file_path)
+                .map_err(|e| format!("Failed to read file: {}", e))?;
+            
+            // 创建NSData
+            let ns_data: id = NSData::dataWithBytes_length_(
+                nil,
+                file_data.as_ptr() as *const std::ffi::c_void,
+                file_data.len() as u64,
+            );
+            
+            // 获取通用剪贴板
+            let pasteboard: id = msg_send![class!(NSPasteboard), generalPasteboard];
+            
+            // 清空剪贴板
+            let _: () = msg_send![pasteboard, clearContents];
+            
+            // 根据文件扩展名设置正确的UTI类型
+            let path = std::path::Path::new(&file_path);
+            let extension = path.extension()
+                .and_then(|s| s.to_str())
+                .unwrap_or("")
+                .to_lowercase();
+            
+            let uti_type = match extension.as_str() {
+                "gif" => "com.compuserve.gif",
+                "png" => "public.png",
+                "jpg" | "jpeg" => "public.jpeg",
+                "webp" => "org.webmproject.webp",
+                _ => "public.png",
+            };
+            
+            // 创建NSString类型
+            let ns_type = NSString::alloc(nil);
+            let ns_type = NSString::init_str(ns_type, uti_type);
+            
+            // 设置数据到剪贴板
+            let success: bool = msg_send![pasteboard, setData:ns_data forType:ns_type];
+            
+            if success {
+                Ok("success".to_string())
+            } else {
+                Err("Failed to set clipboard data".to_string())
+            }
         }
-        
-        Ok("success".to_string())
     }
     
     #[cfg(not(target_os = "macos"))]
