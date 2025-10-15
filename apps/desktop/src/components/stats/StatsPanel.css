@@ -1,0 +1,141 @@
+.stats-panel {
+  padding: 8px 0;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+  text-align: center;
+}
+
+.stat-card:nth-child(2) {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.stat-card:nth-child(3) {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-card:nth-child(4) {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.stat-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.stats-details {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.stats-section {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.stats-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 12px 0;
+}
+
+.stats-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.stats-row:last-child {
+  border-bottom: none;
+}
+
+.stats-row-label {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.stats-row-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.most-used-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.most-used-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: white;
+  border-radius: 6px;
+  transition: transform 0.15s;
+}
+
+.most-used-item:hover {
+  transform: translateX(4px);
+}
+
+.most-used-rank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.most-used-name {
+  flex: 1;
+  font-size: 14px;
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.most-used-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  flex-shrink: 0;
+}

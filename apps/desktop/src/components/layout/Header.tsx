@@ -3,6 +3,7 @@ import { useSearchStore } from '../../stores/searchStore';
 import { useAssetStore } from '../../stores/assetStore';
 import { ImportUrlDialog } from '../import/ImportUrlDialog';
 import { FilterPanel } from '../search/FilterPanel';
+import { StatsPanel } from '../stats/StatsPanel';
 import './Header.css';
 
 export function Header() {
@@ -11,6 +12,7 @@ export function Header() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showUrlDialog, setShowUrlDialog] = useState(false);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [showStatsPanel, setShowStatsPanel] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   
   const handleImportClick = () => {
@@ -116,8 +118,8 @@ export function Header() {
         <button className="header-btn" onClick={() => setShowUrlDialog(true)} title="从URL导入">
           🔗
         </button>
-        <button className="header-btn" title="设置">
-          ⚙️
+        <button className="header-btn" onClick={() => setShowStatsPanel(true)} title="统计信息">
+          📊
         </button>
         <input
           ref={fileInputRef}
@@ -137,6 +139,11 @@ export function Header() {
       <FilterPanel
         open={showFilterPanel}
         onClose={() => setShowFilterPanel(false)}
+      />
+      
+      <StatsPanel
+        open={showStatsPanel}
+        onClose={() => setShowStatsPanel(false)}
       />
     </header>
   );
