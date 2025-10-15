@@ -13,10 +13,6 @@ export function Header() {
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   
-  console.log('[Header] searchHistory:', searchHistory);
-  console.log('[Header] showHistory:', showHistory);
-  console.log('[Header] query:', query);
-  
   const handleImportClick = () => {
     fileInputRef.current?.click();
   };
@@ -57,7 +53,7 @@ export function Header() {
           </button>
           
           {/* 搜索历史下拉框 */}
-          {showHistory && searchHistory.length > 0 && !query && (
+          {showHistory && searchHistory.length > 0 && (
             <div className="search-history">
               <div className="search-history-header">
                 <span>搜索历史</span>
