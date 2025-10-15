@@ -10,10 +10,14 @@ interface DialogProps {
 }
 
 export function Dialog({ open, onClose, title, children, footer }: DialogProps) {
+  console.log('[Dialog] 渲染，open:', open, 'title:', title);
+  
   useEffect(() => {
     if (open) {
+      console.log('[Dialog] 打开对话框，禁用 body 滚动');
       document.body.style.overflow = 'hidden';
     } else {
+      console.log('[Dialog] 关闭对话框，恢复 body 滚动');
       document.body.style.overflow = '';
     }
     
@@ -22,7 +26,12 @@ export function Dialog({ open, onClose, title, children, footer }: DialogProps) 
     };
   }, [open]);
   
-  if (!open) return null;
+  if (!open) {
+    console.log('[Dialog] open 为 false，不渲染');
+    return null;
+  }
+  
+  console.log('[Dialog] 渲染对话框内容');
   
   return (
     <div className="dialog-overlay" onClick={onClose}>
