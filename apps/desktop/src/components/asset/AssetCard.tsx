@@ -51,10 +51,9 @@ export function AssetCard({ asset, selected, onSelect }: AssetCardProps) {
   };
 
   const handleClick = async (e: React.MouseEvent) => {
-    // 如果点击的是按钮、遮罩层或 popover，不触发卡片点击
-    if ((e.target as HTMLElement).closest('button') || 
-        (e.target as HTMLElement).closest('.asset-card-overlay') ||
-        (e.target as HTMLElement).closest('.popover-content')) {
+    // 如果点击的是遮罩层，不触发卡片点击
+    // 按钮和 Popover 会自己阻止冒泡，所以这里不需要检查
+    if ((e.target as HTMLElement).closest('.asset-card-overlay')) {
       return;
     }
     

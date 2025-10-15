@@ -28,7 +28,8 @@ export function Popover({ trigger, content, open: controlledOpen, onOpenChange }
     }
   };
   
-  const handleToggle = () => {
+  const handleToggle = (e: React.MouseEvent) => {
+    e.stopPropagation(); // 阻止事件冒泡到卡片
     const newOpen = !isOpen;
     if (newOpen) {
       updatePosition();
