@@ -41,14 +41,38 @@ export async function searchAssets(
     // 转换为拼音
     const searchPinyin = pinyin(query, { toneType: 'none', type: 'array' }).join('');
     
+    // 导入标签相关函数
+    const { getAssetTags } = await import('./database/operations');
+    
+    // 并行获取所有资产的标签
+    const assetTagsMap = new Map<string, Array<{ id: string; name: string; color: string | null }>>();
+    await Promise.all(
+      allAssets.map(async (asset) => {
+        const tags = await getAssetTags(asset.id);
+        assetTagsMap.set(asset.id, tags);
+      })
+    );
+    
     results = allAssets.filter(asset => {
       const fileName = asset.file_name.toLowerCase();
       const filePinyin = pinyin(asset.file_name, { toneType: 'none', type: 'array' }).join('');
       
       // 匹配文件名或拼音
-      return fileName.includes(searchTerm) || 
-             filePinyin.includes(searchPinyin) ||
-             filePinyin.includes(searchTerm);
+      const matchesFileName = fileName.includes(searchTerm) || 
+                             filePinyin.includes(searchPinyin) ||
+                             filePinyin.includes(searchTerm);
+      
+      // 匹配标签名称或拼音
+      const assetTags = assetTagsMap.get(asset.id) || [];
+      const matchesTag = assetTags.some(tag => {
+        const tagName = tag.name.toLowerCase();
+        const tagPinyin = pinyin(tag.name, { toneType: 'none', type: 'array' }).join('');
+        return tagName.includes(searchTerm) || 
+               tagPinyin.includes(searchPinyin) ||
+               tagPinyin.includes(searchTerm);
+      });
+      
+      return matchesFileName || matchesTag;
     });
   }
   
