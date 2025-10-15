@@ -88,7 +88,14 @@ export function TagSelector({ assetId, trigger, onTagsChange }: TagSelectorProps
         )}
       </div>
       <div className="tag-selector-footer">
-        <button className="tag-selector-create-btn">
+        <button 
+          className="tag-selector-create-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log('[TagSelector] 新建标签按钮被点击');
+            alert('新建标签功能待实现');
+          }}
+        >
           + 新建标签
         </button>
       </div>
