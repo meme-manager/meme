@@ -1,0 +1,26 @@
+{
+  "name": "meme-workers",
+  "version": "1.0.0",
+  "description": "Cloudflare Workers API for Meme Manager",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "db:migrate": "wrangler d1 migrations apply meme-db",
+    "db:create": "wrangler d1 create meme-db"
+  },
+  "keywords": ["cloudflare", "workers", "meme", "sync"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20231218.0",
+    "wrangler": "^3.22.1",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "hono": "^3.12.0",
+    "jose": "^5.2.0"
+  }
+}
