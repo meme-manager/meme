@@ -1,0 +1,69 @@
+.batch-tag-content {
+  min-height: 200px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.batch-tag-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.batch-tag-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.batch-tag-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.batch-tag-item:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.batch-tag-item-selected {
+  background: #eff6ff;
+  border-color: #3b82f6;
+}
+
+.batch-tag-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.batch-tag-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.batch-tag-check {
+  color: #3b82f6;
+  font-size: 16px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.batch-tag-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
