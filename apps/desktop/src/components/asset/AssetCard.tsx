@@ -51,8 +51,9 @@ export function AssetCard({ asset, selected, onSelect }: AssetCardProps) {
   };
 
   const handleClick = async (e: React.MouseEvent) => {
-    // 如果点击的是按钮或 popover，不触发卡片点击
+    // 如果点击的是按钮、遮罩层或 popover，不触发卡片点击
     if ((e.target as HTMLElement).closest('button') || 
+        (e.target as HTMLElement).closest('.asset-card-overlay') ||
         (e.target as HTMLElement).closest('.popover-content')) {
       return;
     }
@@ -63,24 +64,26 @@ export function AssetCard({ asset, selected, onSelect }: AssetCardProps) {
       return;
     }
     
-    // 普通点击：复制到剪贴板
-    try {
-      await invoke('copy_image_to_clipboard', {
-        filePath: asset.file_path
-      });
-      
-      // 视觉反馈
-      setJustCopied(true);
-      setTimeout(() => setJustCopied(false), 500);
-      
-      // Toast 提示
-      addToast('✅ 已复制', 'success');
-      
-      // 更新使用次数
-      await incrementAssetUseCount(asset.id);
-    } catch (error) {
-      console.error('复制失败:', error);
-      addToast('❌ 复制失败', 'error');
+    // 普通点击：复制到剪贴板（仅在不悬浮时）
+    if (!isHovering) {
+      try {
+        await invoke('copy_image_to_clipboard', {
+          filePath: asset.file_path
+        });
+        
+        // 视觉反馈
+        setJustCopied(true);
+        setTimeout(() => setJustCopied(false), 500);
+        
+        // Toast 提示
+        addToast('✅ 已复制', 'success');
+        
+        // 更新使用次数
+        await incrementAssetUseCount(asset.id);
+      } catch (error) {
+        console.error('复制失败:', error);
+        addToast('❌ 复制失败', 'error');
+      }
     }
   };
   

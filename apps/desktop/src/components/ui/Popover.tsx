@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import './Popover.css';
 
 interface PopoverProps {
@@ -65,12 +66,14 @@ export function Popover({ trigger, content, open: controlledOpen, onOpenChange }
   }, [isOpen]);
   
   return (
-    <div className="popover-container">
-      <div ref={triggerRef} onClick={handleToggle} className="popover-trigger">
-        {trigger}
+    <>
+      <div className="popover-container">
+        <div ref={triggerRef} onClick={handleToggle} className="popover-trigger">
+          {trigger}
+        </div>
       </div>
       
-      {isOpen && (
+      {isOpen && createPortal(
         <div 
           ref={popoverRef} 
           className="popover-content"
@@ -81,8 +84,9 @@ export function Popover({ trigger, content, open: controlledOpen, onOpenChange }
           }}
         >
           {content}
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }
