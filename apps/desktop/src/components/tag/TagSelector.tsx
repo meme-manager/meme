@@ -62,6 +62,26 @@ export function TagSelector({ assetId, trigger, onTagsChange }: TagSelectorProps
     }
   };
   
+  const handleOpenCreateDialog = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('[TagSelector] 打开创建对话框');
+    setShowCreateDialog(true);
+    // 关闭 Popover，避免遮罩层消失时 Popover 也消失
+    setOpen(false);
+  };
+  
+  const handleCreateTag = async (name: string, color: string) => {
+    console.log('[TagSelector] 创建标签，name:', name, 'color:', color);
+    const newTag = await createNewTag(name, color);
+    if (newTag) {
+      console.log('[TagSelector] 标签创建成功，自动添加到资产');
+      // 自动将新创建的标签添加到当前资产
+      await addAssetTag(assetId, newTag.id);
+      await loadAssetTags();
+      onTagsChange?.();
+    }
+  };
+  
   const content = (
     <div className="tag-selector">
       <div className="tag-selector-header">选择标签</div>
@@ -92,29 +112,13 @@ export function TagSelector({ assetId, trigger, onTagsChange }: TagSelectorProps
       <div className="tag-selector-footer">
         <button 
           className="tag-selector-create-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            console.log('[TagSelector] 新建标签按钮被点击');
-            setShowCreateDialog(true);
-          }}
+          onClick={handleOpenCreateDialog}
         >
           + 新建标签
         </button>
       </div>
     </div>
   );
-  
-  const handleCreateTag = async (name: string, color: string) => {
-    console.log('[TagSelector] 创建标签，name:', name, 'color:', color);
-    const newTag = await createNewTag(name, color);
-    if (newTag) {
-      console.log('[TagSelector] 标签创建成功，自动添加到资产');
-      // 自动将新创建的标签添加到当前资产
-      await addAssetTag(assetId, newTag.id);
-      await loadAssetTags();
-      onTagsChange?.();
-    }
-  };
   
   return (
     <>
