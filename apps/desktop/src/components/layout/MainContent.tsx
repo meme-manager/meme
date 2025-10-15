@@ -1,5 +1,6 @@
 import { useState, DragEvent } from 'react';
 import { AssetGrid } from '../asset/AssetGrid';
+import { FilterBar } from '../search/FilterBar';
 import { useAssetStore } from '../../stores/assetStore';
 import './MainContent.css';
 
@@ -64,6 +65,7 @@ export function MainContent() {
           </div>
         </div>
       )}
+      <FilterBar />
       <AssetGrid />
     </main>
   );
