@@ -6,11 +6,12 @@ import { FilterPanel } from '../search/FilterPanel';
 import './Header.css';
 
 export function Header() {
-  const { query, setQuery } = useSearchStore();
+  const { query, setQuery, searchHistory, clearHistory } = useSearchStore();
   const { importMultipleAssets } = useAssetStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showUrlDialog, setShowUrlDialog] = useState(false);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   
   const handleImportClick = () => {
     fileInputRef.current?.click();
@@ -40,6 +41,8 @@ export function Header() {
             placeholder="搜索表情包（支持拼音）..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setShowHistory(true)}
+            onBlur={() => setTimeout(() => setShowHistory(false), 200)}
           />
           <button 
             className="search-filter-btn" 
@@ -48,6 +51,36 @@ export function Header() {
           >
             🔍
           </button>
+          
+          {/* 搜索历史下拉框 */}
+          {showHistory && searchHistory.length > 0 && (
+            <div className="search-history">
+              <div className="search-history-header">
+                <span>搜索历史</span>
+                <button 
+                  className="search-history-clear"
+                  onClick={clearHistory}
+                >
+                  清除
+                </button>
+              </div>
+              <div className="search-history-list">
+                {searchHistory.map((item, index) => (
+                  <div
+                    key={index}
+                    className="search-history-item"
+                    onClick={() => {
+                      setQuery(item);
+                      setShowHistory(false);
+                    }}
+                  >
+                    <span className="history-icon">🕒</span>
+                    <span className="history-text">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
       
