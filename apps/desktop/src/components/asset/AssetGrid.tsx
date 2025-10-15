@@ -7,6 +7,7 @@ import { AssetCard } from './AssetCard';
 import { AssetDetail } from './AssetDetail';
 import { QuickPreview } from './QuickPreview';
 import { BatchTagSelector } from '../tag/BatchTagSelector';
+import { ExportDialog } from '../export/ExportDialog';
 import { DropZone } from './DropZone';
 import { Button } from '../ui/Button';
 import type { Asset } from '../../types/asset';
@@ -19,6 +20,7 @@ export function AssetGrid() {
   const [detailAsset, setDetailAsset] = useState<Asset | null>(null);
   const [previewAsset, setPreviewAsset] = useState<Asset | null>(null);
   const [showBatchTagSelector, setShowBatchTagSelector] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
   
   // 使用搜索结果或全部资产
   // 当有搜索结果时（无论是关键词搜索还是筛选），都使用搜索结果
@@ -97,6 +99,7 @@ export function AssetGrid() {
             <Button onClick={selectAll}>全选</Button>
             <Button onClick={clearSelection}>取消选择</Button>
             <Button onClick={() => setShowBatchTagSelector(true)}>批量标签</Button>
+            <Button onClick={() => setShowExportDialog(true)}>导出</Button>
             <Button onClick={handleBatchDelete}>批量删除</Button>
           </div>
         </div>
@@ -148,6 +151,13 @@ export function AssetGrid() {
           addToast(`✅ 已为 ${selectedAssetIds.size} 张图片添加标签`, 'success');
           clearSelection();
         }}
+      />
+      
+      <ExportDialog
+        open={showExportDialog}
+        assetIds={Array.from(selectedAssetIds)}
+        assetPaths={assets.filter(a => selectedAssetIds.has(a.id)).map(a => a.file_path)}
+        onClose={() => setShowExportDialog(false)}
       />
     </>
   );

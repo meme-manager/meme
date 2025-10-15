@@ -1,0 +1,78 @@
+.export-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 8px 0;
+}
+
+.export-info {
+  background: #f0f9ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.export-info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.export-info-label {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.export-info-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.export-path-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.export-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.export-path-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.export-path-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #f9fafb;
+  color: #374151;
+}
+
+.export-path-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: white;
+}
+
+.export-note {
+  padding: 12px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #92400e;
+}
+
+.export-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
