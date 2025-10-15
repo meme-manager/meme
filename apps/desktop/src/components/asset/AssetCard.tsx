@@ -1,4 +1,9 @@
-import { convertFileSrc } from '@tauri-apps/api/core';
+import { useState, useEffect } from 'react';
+import { convertFileSrc, invoke } from '@tauri-apps/api/core';
+import { useAssetStore } from '../../stores/assetStore';
+import { useToastStore } from '../ui/Toast';
+import { getAssetTags } from '../../lib/database/operations';
+import { TagSelector } from '../tag/TagSelector';
 import type { Asset } from '../../types/asset';
 import './AssetCard.css';
 
@@ -6,11 +11,36 @@ interface AssetCardProps {
   asset: Asset;
   selected: boolean;
   onSelect: () => void;
-  onClick: () => void;
 }
 
-export function AssetCard({ asset, selected, onSelect, onClick }: AssetCardProps) {
+interface Tag {
+  id: string;
+  name: string;
+  color: string | null;
+}
+
+export function AssetCard({ asset, selected, onSelect }: AssetCardProps) {
+  const [isHovering, setIsHovering] = useState(false);
+  const [justCopied, setJustCopied] = useState(false);
+  const [assetTags, setAssetTags] = useState<Tag[]>([]);
+  const { incrementAssetUseCount } = useAssetStore();
+  const { addToast } = useToastStore.getState();
   const imageSrc = convertFileSrc(asset.thumb_medium || asset.file_path);
+  const isGif = asset.mime_type === 'image/gif';
+  
+  // 加载资产标签
+  useEffect(() => {
+    loadAssetTags();
+  }, [asset.id]);
+  
+  const loadAssetTags = async () => {
+    try {
+      const tags = await getAssetTags(asset.id);
+      setAssetTags(tags);
+    } catch (error) {
+      console.error('Failed to load asset tags:', error);
+    }
+  };
   
   const handleDragStart = (e: React.DragEvent) => {
     // 设置拖拽数据为文件路径
@@ -19,18 +49,69 @@ export function AssetCard({ asset, selected, onSelect, onClick }: AssetCardProps
     e.dataTransfer.setData('text/plain', asset.file_path);
   };
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = async (e: React.MouseEvent) => {
+    // 如果点击的是按钮或 popover，不触发卡片点击
+    if ((e.target as HTMLElement).closest('button') || 
+        (e.target as HTMLElement).closest('.popover-content')) {
+      return;
+    }
+    
+    // Cmd/Ctrl + 点击：多选
     if (e.metaKey || e.ctrlKey) {
       onSelect?.();
-    } else {
-      onClick?.();
+      return;
+    }
+    
+    // 普通点击：复制到剪贴板
+    try {
+      await invoke('copy_image_to_clipboard', {
+        filePath: asset.file_path
+      });
+      
+      // 视觉反馈
+      setJustCopied(true);
+      setTimeout(() => setJustCopied(false), 500);
+      
+      // Toast 提示
+      addToast('✅ 已复制', 'success');
+      
+      // 更新使用次数
+      await incrementAssetUseCount(asset.id);
+    } catch (error) {
+      console.error('复制失败:', error);
+      addToast('❌ 复制失败', 'error');
+    }
+  };
+  
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    try {
+      await invoke('copy_image_to_clipboard', {
+        filePath: asset.file_path
+      });
+      
+      // 视觉反馈
+      setJustCopied(true);
+      setTimeout(() => setJustCopied(false), 500);
+      
+      // Toast 提示
+      addToast('✅ 已复制', 'success');
+      
+      // 更新使用次数
+      await incrementAssetUseCount(asset.id);
+    } catch (error) {
+      console.error('复制失败:', error);
+      addToast('❌ 复制失败', 'error');
     }
   };
 
   return (
     <div
-      className={`asset-card ${selected ? 'asset-card-selected' : ''}`}
+      className={`asset-card ${selected ? 'asset-card-selected' : ''} ${justCopied ? 'asset-card-copied' : ''}`}
       onClick={handleClick}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
       draggable
       onDragStart={handleDragStart}
       title="可以拖拽到其他应用"
@@ -42,17 +123,60 @@ export function AssetCard({ asset, selected, onSelect, onClick }: AssetCardProps
           loading="lazy"
           draggable={false}
         />
+        
+        {/* GIF 标识 */}
+        {isGif && (
+          <div className="asset-card-badge">GIF</div>
+        )}
+        
+        {/* 悬浮时显示大复制按钮 */}
+        {isHovering && !selected && (
+          <div className="asset-card-overlay">
+            <button className="asset-card-copy-btn" onClick={handleCopy}>
+              <span className="copy-icon">📋</span>
+              <span className="copy-text">复制</span>
+            </button>
+            <div className="asset-card-actions">
+              <TagSelector
+                assetId={asset.id}
+                onTagsChange={loadAssetTags}
+                trigger={
+                  <button className="asset-card-action-btn" title="添加标签">
+                    🏷️
+                  </button>
+                }
+              />
+              <button className="asset-card-action-btn" title="删除">
+                🗑️
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       
-      <div className="asset-card-info">
-        <div className="asset-card-name" title={asset.file_name}>
-          {asset.file_name}
+      {/* 底部信息：标签圆点 + 使用次数 */}
+      <div className="asset-card-footer">
+        <div className="asset-card-tags">
+          {assetTags.slice(0, 3).map(tag => (
+            <div
+              key={tag.id}
+              className="tag-dot"
+              style={{ background: tag.color || '#6b7280' }}
+              title={tag.name}
+            />
+          ))}
+          {assetTags.length > 3 && (
+            <div className="tag-more" title={`还有 ${assetTags.length - 3} 个标签`}>
+              +{assetTags.length - 3}
+            </div>
+          )}
         </div>
-        <div className="asset-card-meta">
-          {asset.width} × {asset.height}
-        </div>
+        {asset.use_count > 0 && (
+          <div className="asset-card-count">{asset.use_count}次</div>
+        )}
       </div>
       
+      {/* 选中标记 */}
       {selected && (
         <div className="asset-card-check">✓</div>
       )}

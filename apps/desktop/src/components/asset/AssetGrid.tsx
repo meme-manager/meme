@@ -1,19 +1,15 @@
-import { useState } from 'react';
 import { ask } from '@tauri-apps/plugin-dialog';
 import { useAssetStore } from '../../stores/assetStore';
 import { useSearchStore } from '../../stores/searchStore';
 import { useToastStore } from '../ui/Toast';
 import { AssetCard } from './AssetCard';
-import { AssetDetail } from './AssetDetail';
 import { DropZone } from './DropZone';
 import { Button } from '../ui/Button';
-import type { Asset } from '../../types/asset';
 import './AssetGrid.css';
 
 export function AssetGrid() {
   const { assets, selectedAssetIds, selectAsset, deselectAsset, clearSelection, selectAll, deleteAssetById } = useAssetStore();
   const { query, results, filters } = useSearchStore();
-  const [detailAsset, setDetailAsset] = useState<Asset | null>(null);
   const { addToast } = useToastStore.getState();
   
   // 使用搜索结果或全部资产
@@ -97,18 +93,9 @@ export function AssetGrid() {
                 selectAsset(asset.id);
               }
             }}
-            onClick={() => {
-              setDetailAsset(asset);
-            }}
           />
         ))}
       </div>
-      
-      <AssetDetail
-        asset={detailAsset}
-        open={detailAsset !== null}
-        onClose={() => setDetailAsset(null)}
-      />
     </>
   );
 }
