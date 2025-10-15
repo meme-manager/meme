@@ -8,11 +8,13 @@ import { ContextMenu, type ContextMenuItem } from '../ui/ContextMenu';
 import { getAssetTags } from '../../lib/database/operations';
 import { TagSelector } from '../tag/TagSelector';
 import type { Asset } from '../../types/asset';
+import type { AssetSearchMatch } from '../../lib/search';
 import './AssetCard.css';
 
 interface AssetCardProps {
   asset: Asset;
   selected: boolean;
+  matchInfo?: AssetSearchMatch;
   onSelect: () => void;
   onOpenDetail?: () => void;
   onQuickPreview?: () => void;
@@ -24,7 +26,7 @@ interface Tag {
   color: string | null;
 }
 
-export function AssetCard({ asset, selected, onSelect, onOpenDetail, onQuickPreview }: AssetCardProps) {
+export function AssetCard({ asset, selected, matchInfo, onSelect, onOpenDetail, onQuickPreview }: AssetCardProps) {
   const [isHovering, setIsHovering] = useState(false);
   const [justCopied, setJustCopied] = useState(false);
   const [assetTags, setAssetTags] = useState<Tag[]>([]);
@@ -268,6 +270,28 @@ export function AssetCard({ asset, selected, onSelect, onOpenDetail, onQuickPrev
       {/* 选中标记 */}
       {selected && (
         <div className="asset-card-check">✓</div>
+      )}
+      
+      {/* 搜索匹配信息 */}
+      {matchInfo && (
+        <div className="asset-card-match-info">
+          {matchInfo.matchType === 'filename' && (
+            <span className="match-badge match-filename">文件名</span>
+          )}
+          {matchInfo.matchType === 'tag' && (
+            <span className="match-badge match-tag">
+              标签: {matchInfo.matchedTags?.join(', ')}
+            </span>
+          )}
+          {matchInfo.matchType === 'both' && (
+            <>
+              <span className="match-badge match-filename">文件名</span>
+              <span className="match-badge match-tag">
+                标签: {matchInfo.matchedTags?.join(', ')}
+              </span>
+            </>
+          )}
+        </div>
       )}
     </div>
     

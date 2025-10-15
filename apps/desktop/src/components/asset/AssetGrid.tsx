@@ -103,22 +103,28 @@ export function AssetGrid() {
       )}
       
       <div className="asset-grid">
-        {displayAssets.map(asset => (
-          <AssetCard
-            key={asset.id}
-            asset={asset}
-            selected={selectedAssetIds.has(asset.id)}
-            onSelect={() => {
-              if (selectedAssetIds.has(asset.id)) {
-                deselectAsset(asset.id);
-              } else {
-                selectAsset(asset.id);
-              }
-            }}
-            onOpenDetail={() => setDetailAsset(asset)}
-            onQuickPreview={() => setPreviewAsset(asset)}
-          />
-        ))}
+        {displayAssets.map(asset => {
+          // 查找匹配信息
+          const matchInfo = results?.matches?.find(m => m.asset.id === asset.id);
+          
+          return (
+            <AssetCard
+              key={asset.id}
+              asset={asset}
+              selected={selectedAssetIds.has(asset.id)}
+              matchInfo={matchInfo}
+              onSelect={() => {
+                if (selectedAssetIds.has(asset.id)) {
+                  deselectAsset(asset.id);
+                } else {
+                  selectAsset(asset.id);
+                }
+              }}
+              onOpenDetail={() => setDetailAsset(asset)}
+              onQuickPreview={() => setPreviewAsset(asset)}
+            />
+          );
+        })}
       </div>
       
       {detailAsset && (

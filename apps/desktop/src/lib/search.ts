@@ -15,8 +15,16 @@ export interface SearchFilters {
   dateRange?: [number, number];
 }
 
+export interface AssetSearchMatch {
+  asset: Asset;
+  matchType: 'filename' | 'tag' | 'both';
+  matchedTags?: string[]; // 匹配的标签名称
+  score: number; // 相关度分数，越高越相关
+}
+
 export interface SearchResult {
   assets: Asset[];
+  matches: AssetSearchMatch[]; // 带匹配信息的结果
   total: number;
   took: number;
 }
@@ -34,6 +42,9 @@ export async function searchAssets(
   const allAssets = await listAssets();
   
   let results = allAssets;
+  
+  // 存储匹配信息
+  let matches: AssetSearchMatch[] = [];
   
   // 如果有查询关键词，进行搜索
   if (query.trim()) {
@@ -53,7 +64,10 @@ export async function searchAssets(
       })
     );
     
-    results = allAssets.filter(asset => {
+    // 计算每个资产的匹配信息和分数
+    const matchedAssets: AssetSearchMatch[] = [];
+    
+    for (const asset of allAssets) {
       const fileName = asset.file_name.toLowerCase();
       const filePinyin = pinyin(asset.file_name, { toneType: 'none', type: 'array' }).join('');
       
@@ -64,16 +78,52 @@ export async function searchAssets(
       
       // 匹配标签名称或拼音
       const assetTags = assetTagsMap.get(asset.id) || [];
-      const matchesTag = assetTags.some(tag => {
+      const matchedTags: string[] = [];
+      
+      for (const tag of assetTags) {
         const tagName = tag.name.toLowerCase();
         const tagPinyin = pinyin(tag.name, { toneType: 'none', type: 'array' }).join('');
-        return tagName.includes(searchTerm) || 
-               tagPinyin.includes(searchPinyin) ||
-               tagPinyin.includes(searchTerm);
-      });
+        if (tagName.includes(searchTerm) || 
+            tagPinyin.includes(searchPinyin) ||
+            tagPinyin.includes(searchTerm)) {
+          matchedTags.push(tag.name);
+        }
+      }
       
-      return matchesFileName || matchesTag;
-    });
+      const matchesTag = matchedTags.length > 0;
+      
+      if (matchesFileName || matchesTag) {
+        // 计算相关度分数
+        let score = 0;
+        
+        // 文件名完全匹配：100分
+        if (fileName === searchTerm) score += 100;
+        // 文件名开头匹配：50分
+        else if (fileName.startsWith(searchTerm)) score += 50;
+        // 文件名包含：20分
+        else if (matchesFileName) score += 20;
+        
+        // 标签完全匹配：80分
+        if (matchedTags.some(t => t.toLowerCase() === searchTerm)) score += 80;
+        // 标签包含：每个匹配的标签 +15分
+        else score += matchedTags.length * 15;
+        
+        // 使用次数加成
+        score += Math.min(asset.use_count * 2, 20);
+        
+        matchedAssets.push({
+          asset,
+          matchType: matchesFileName && matchesTag ? 'both' : matchesFileName ? 'filename' : 'tag',
+          matchedTags: matchedTags.length > 0 ? matchedTags : undefined,
+          score,
+        });
+      }
+    }
+    
+    // 按分数排序
+    matchedAssets.sort((a, b) => b.score - a.score);
+    matches = matchedAssets;
+    results = matchedAssets.map(m => m.asset);
   }
   
   // 应用筛选器
@@ -117,6 +167,7 @@ export async function searchAssets(
   
   return {
     assets: results,
+    matches,
     total: results.length,
     took,
   };
