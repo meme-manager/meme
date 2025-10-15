@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
-import type { Env } from '../types';
+import type { AppEnv } from '../types';
 import { success, error } from '../utils/response';
 import { generateToken } from '../utils/jwt';
 import { generateUUID, now, safeJsonParse, validateRequired } from '../utils/helpers';
 
-const auth = new Hono<{ Bindings: Env }>();
+const auth = new Hono<AppEnv>();
 
 /**
  * 设备注册/登录

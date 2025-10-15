@@ -1,4 +1,4 @@
-import type { Env, RateLimitConfig } from '../types';
+import type { CloudflareBindings, RateLimitConfig } from '../types';
 
 /**
  * 限流配置
@@ -19,7 +19,7 @@ export const RATE_LIMITS: RateLimitConfig = {
  */
 export async function checkUserQuota(
   userId: string,
-  env: Env
+  env: CloudflareBindings
 ): Promise<{ allowed: boolean; reason?: string }> {
   try {
     // 1. 检查图片数量
@@ -70,7 +70,7 @@ export async function checkUserQuota(
  */
 export async function checkDailyShareLimit(
   userId: string,
-  env: Env
+  env: CloudflareBindings
 ): Promise<{ allowed: boolean; reason?: string }> {
   try {
     const today = new Date().toISOString().split('T')[0];
@@ -100,9 +100,15 @@ export async function checkDailyShareLimit(
  */
 export async function checkIpRateLimit(
   ip: string,
-  env: Env
+  env: CloudflareBindings
 ): Promise<{ allowed: boolean; reason?: string }> {
   try {
+    // 如果没有配置 KV,跳过限流检查
+    if (!env.KV) {
+      console.log('[RateLimit] KV 未配置,跳过 IP 限流检查');
+      return { allowed: true };
+    }
+
     const hour = new Date().toISOString().slice(0, 13); // YYYY-MM-DDTHH
     const key = `ip:${ip}:${hour}`;
     
@@ -134,9 +140,28 @@ export async function checkIpRateLimit(
 export async function checkShareViewLimit(
   shareId: string,
   ip: string,
-  env: Env
+  env: CloudflareBindings
 ): Promise<{ allowed: boolean; reason?: string }> {
   try {
+    // 如果没有配置 KV,只检查分享总查看次数
+    if (!env.KV) {
+      console.log('[RateLimit] KV 未配置,跳过 IP 级别的分享查看限流');
+      
+      // 仍然检查分享总查看次数
+      const share = await env.DB.prepare(
+        'SELECT view_count FROM shares WHERE share_id = ?'
+      ).bind(shareId).first<{ view_count: number }>();
+      
+      if (share && share.view_count >= RATE_LIMITS.maxViewsPerShare) {
+        return {
+          allowed: false,
+          reason: '该分享已达到最大查看次数'
+        };
+      }
+      
+      return { allowed: true };
+    }
+
     // 1. 检查 IP 每小时查看分享次数
     const hour = new Date().toISOString().slice(0, 13);
     const ipKey = `share-view:${ip}:${hour}`;

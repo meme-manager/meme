@@ -1,11 +1,11 @@
 import { Hono } from 'hono';
-import type { Env, SyncPullRequest, SyncPushRequest, Asset, Tag, AssetTag, UserSetting } from '../types';
+import type { AppEnv, SyncPullRequest, SyncPushRequest, Asset, Tag, AssetTag, UserSetting } from '../types';
 import { success, error } from '../utils/response';
 import { requireAuth } from '../middleware/auth';
 import { safeJsonParse, validateRequired, now } from '../utils/helpers';
 import { checkUserQuota } from '../utils/rateLimit';
 
-const sync = new Hono<{ Bindings: Env }>();
+const sync = new Hono<AppEnv>();
 
 /**
  * 拉取云端更新

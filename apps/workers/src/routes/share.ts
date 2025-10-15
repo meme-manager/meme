@@ -1,11 +1,11 @@
 import { Hono } from 'hono';
-import type { Env, CreateShareRequest, Share, Asset } from '../types';
+import type { AppEnv, CreateShareRequest, Share, Asset } from '../types';
 import { success, error, notFound } from '../utils/response';
 import { requireAuth } from '../middleware/auth';
 import { safeJsonParse, validateRequired, now, generateShortId, hashPassword, verifyPassword } from '../utils/helpers';
 import { checkUserQuota, checkDailyShareLimit, checkShareViewLimit, getClientIp } from '../utils/rateLimit';
 
-const share = new Hono<{ Bindings: Env }>();
+const share = new Hono<AppEnv>();
 
 /**
  * 创建分享
@@ -315,6 +315,74 @@ share.delete('/:shareId', async (c) => {
   } catch (err) {
     console.error('[Share] 删除分享失败:', err);
     return error('删除分享失败', 500);
+  }
+});
+
+/**
+ * 导入分享(统计)
+ * POST /share/:shareId/import
+ */
+share.post('/:shareId/import', async (c) => {
+  const shareId = c.req.param('shareId');
+  
+  try {
+    console.log(`[Share] 导入分享: ${shareId}`);
+    
+    // 1. 检查分享是否存在
+    const shareInfo = await c.env.DB.prepare(
+      'SELECT * FROM shares WHERE share_id = ?'
+    ).bind(shareId).first<Share>();
+    
+    if (!shareInfo) {
+      return notFound('分享不存在');
+    }
+    
+    // 2. 检查是否过期
+    if (shareInfo.expires_at && shareInfo.expires_at < Date.now()) {
+      return error('分享已过期', 410);
+    }
+    
+    // 3. 检查下载次数限制
+    if (shareInfo.max_downloads && shareInfo.download_count >= shareInfo.max_downloads) {
+      return error('已达到最大下载次数', 403);
+    }
+    
+    // 4. 获取分享的资产列表
+    const assets = await c.env.DB.prepare(`
+      SELECT a.id, a.content_hash, a.file_name, a.mime_type
+      FROM share_assets sa
+      JOIN assets a ON sa.asset_id = a.id
+      WHERE sa.share_id = ?
+      ORDER BY sa.display_order
+    `).bind(shareId).all<Asset>();
+    
+    // 5. 生成下载 URL
+    const assetsWithUrls = (assets.results || []).map(asset => {
+      const ext = asset.file_name.split('.').pop();
+      return {
+        id: asset.id,
+        download_url: `/r2/shared/${shareId}/${asset.content_hash}.${ext}`,
+      };
+    });
+    
+    // 6. 更新下载次数
+    await c.env.DB.prepare(`
+      UPDATE shares 
+      SET download_count = download_count + 1 
+      WHERE share_id = ?
+    `).bind(shareId).run();
+    
+    console.log(`[Share] 导入成功: ${shareId}, ${assetsWithUrls.length} 个资产`);
+    
+    return success({
+      success: true,
+      imported_count: assetsWithUrls.length,
+      assets: assetsWithUrls,
+    }, '导入成功');
+    
+  } catch (err) {
+    console.error('[Share] 导入失败:', err);
+    return error('导入失败', 500);
   }
 });
 

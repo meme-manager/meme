@@ -1,16 +1,16 @@
 import { Hono } from 'hono';
-import type { Env, QuotaInfo } from '../types';
+import type { AppEnv, QuotaInfo } from '../types';
 import { success, error } from '../utils/response';
 import { requireAuth } from '../middleware/auth';
 import { RATE_LIMITS } from '../utils/rateLimit';
 
-const quota = new Hono<{ Bindings: Env }>();
+const quota = new Hono<AppEnv>();
 
 /**
  * 获取配额信息
- * GET /quota
+ * GET /quota/info
  */
-quota.get('/', async (c) => {
+quota.get('/info', async (c) => {
   const user = requireAuth(c);
   
   try {

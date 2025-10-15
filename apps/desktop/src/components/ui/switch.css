@@ -1,0 +1,53 @@
+/* Switch 开关样式 */
+
+.switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 44px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background-color: #e5e7eb;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  outline: none;
+}
+
+.switch:hover:not(.switch-disabled) {
+  background-color: #d1d5db;
+}
+
+.switch:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.switch-checked {
+  background-color: #3b82f6;
+}
+
+.switch-checked:hover:not(.switch-disabled) {
+  background-color: #2563eb;
+}
+
+.switch-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.switch-thumb {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+  transform: translateX(2px);
+}
+
+.switch-checked .switch-thumb {
+  transform: translateX(22px);
+}

@@ -1,12 +1,12 @@
 import type { Context } from 'hono';
-import type { Env, JWTPayload } from '../types';
+import type { AppEnv, JWTPayload } from '../types';
 import { extractToken, verifyToken } from '../utils/jwt';
 import { unauthorized } from '../utils/response';
 
 /**
  * 认证中间件
  */
-export async function authMiddleware(c: Context<{ Bindings: Env }>, next: () => Promise<void>) {
+export async function authMiddleware(c: Context<AppEnv>, next: () => Promise<void>) {
   const token = extractToken(c.req.raw);
   
   if (!token) {
@@ -36,7 +36,7 @@ export async function authMiddleware(c: Context<{ Bindings: Env }>, next: () => 
 /**
  * 可选认证中间件（允许未认证的请求通过）
  */
-export async function optionalAuthMiddleware(c: Context<{ Bindings: Env }>, next: () => Promise<void>) {
+export async function optionalAuthMiddleware(c: Context<AppEnv>, next: () => Promise<void>) {
   const token = extractToken(c.req.raw);
   
   if (token) {

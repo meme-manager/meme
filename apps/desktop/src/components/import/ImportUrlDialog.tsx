@@ -99,8 +99,12 @@ export function ImportUrlDialog({ open, onClose }: ImportUrlDialogProps) {
             thumb_large: result.thumb_large || null,
             last_used_at: null,
             use_count: 0,
+            is_favorite: 0,
+            favorited_at: null,
             synced: 0,
             cloud_url: null,
+            r2_key: null,
+            thumb_r2_key: null,
             deleted: 0,
             deleted_at: null,
           });

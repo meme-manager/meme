@@ -1,0 +1,41 @@
+/* Card 卡片样式 */
+
+.card {
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background-color: white;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #111827;
+  margin: 0;
+}
+
+.card-description {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #6b7280;
+  margin: 0.5rem 0 0 0;
+}
+
+.card-content {
+  padding: 1.5rem;
+}
+
+.card-content:first-child {
+  padding-top: 1.5rem;
+}
+
+.card-content:last-child {
+  padding-bottom: 1.5rem;
+}

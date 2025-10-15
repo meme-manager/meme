@@ -2,6 +2,25 @@
 
 表情包管理工具的云端 API，基于 Cloudflare Workers、D1 和 R2 构建。
 
+## 🚀 一键部署
+
+**最简单的方式!** 只需一条命令:
+
+```bash
+./deploy.sh
+```
+
+脚本会自动完成:
+- ✅ 检查环境和依赖
+- ✅ 登录 Cloudflare
+- ✅ 创建 D1 数据库
+- ✅ 运行数据库迁移
+- ✅ 创建 R2 存储桶
+- ✅ 生成并设置 JWT 密钥
+- ✅ 部署 Workers
+
+详细说明请查看: [QUICK_DEPLOY.md](../../QUICK_DEPLOY.md)
+
 ## 功能特性
 
 - ✅ 设备注册和 JWT 认证

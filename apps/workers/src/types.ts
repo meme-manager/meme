@@ -1,11 +1,24 @@
-// 环境变量类型定义
-export interface Env {
+// Cloudflare Workers 绑定类型
+export interface CloudflareBindings {
   DB: D1Database;
   R2: R2Bucket;
-  KV: KVNamespace;
+  KV?: KVNamespace;  // 可选,用于限流
   ENVIRONMENT: string;
   JWT_SECRET?: string;
+  [key: string]: any; // 索引签名以兼容 Hono Bindings
 }
+
+// Hono 上下文变量类型
+export interface HonoVariables {
+  user?: JWTPayload;
+  [key: string]: any; // 索引签名以兼容 Hono Variables
+}
+
+// Hono 环境类型
+export type AppEnv = {
+  Bindings: CloudflareBindings;
+  Variables: HonoVariables;
+};
 
 // 用户类型
 export interface User {

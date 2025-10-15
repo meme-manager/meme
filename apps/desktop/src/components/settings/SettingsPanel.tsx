@@ -5,6 +5,7 @@ import { useAssetStore } from '../../stores/assetStore';
 import { Dialog } from '../ui/Dialog';
 import { StatsPanel } from '../stats/StatsPanel';
 import { ExportDialog } from '../export/ExportDialog';
+import { CloudSyncSettingsInline } from './CloudSyncSettingsInline';
 import './SettingsPanel.css';
 
 interface SettingsPanelProps {
@@ -61,6 +62,12 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                 <span className="settings-toggle-slider"></span>
               </label>
             </div>
+          </div>
+
+          {/* 云同步设置 */}
+          <div className="settings-section">
+            <h3 className="settings-section-title">☁️ 云同步</h3>
+            <CloudSyncSettingsInline />
           </div>
 
           {/* 其他功能 */}

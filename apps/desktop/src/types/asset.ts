@@ -39,6 +39,8 @@ export interface Asset {
   // 云同步状态
   synced: number;                  // 0=未同步, 1=已同步
   cloud_url: string | null;        // R2 URL（同步后）
+  r2_key: string | null;           // R2 存储键
+  thumb_r2_key: string | null;     // R2 缩略图键
   
   // 软删除
   deleted: number;                 // 0=正常, 1=已删除
