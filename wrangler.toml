@@ -31,9 +31,9 @@ bucket_name = "meme-storage"
 
 # 构建配置
 [build]
-command = "cd apps/workers && npm install && npm run build"
+command = "cd packages/shared && npm run build && cd ../../apps/workers && npm install"
 cwd = "/"
-watch_dirs = ["apps/workers/src"]
+watch_dirs = ["apps/workers/src", "packages/shared/src"]
 
 # 生产环境配置
 [env.production]
