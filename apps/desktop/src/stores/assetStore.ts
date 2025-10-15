@@ -15,6 +15,7 @@ interface AssetState {
   loading: boolean;
   error: string | null;
   selectedAssetIds: Set<string>;
+  favoriteAssetIds: Set<string>; // 临时存储收藏状态
   
   // Actions
   loadAssets: () => Promise<void>;
@@ -23,6 +24,7 @@ interface AssetState {
   importMultipleAssets: (files: File[], options?: any) => Promise<void>;
   deleteAssetById: (id: string) => Promise<void>;
   incrementAssetUseCount: (id: string) => Promise<void>;
+  toggleFavorite: (id: string) => void;
   selectAsset: (id: string) => void;
   deselectAsset: (id: string) => void;
   clearSelection: () => void;
@@ -34,6 +36,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   loading: false,
   error: null,
   selectedAssetIds: new Set(),
+  favoriteAssetIds: new Set(),
   
   loadAssets: async () => {
     set({ loading: true, error: null });
@@ -219,5 +222,17 @@ export const useAssetStore = create<AssetState>((set, get) => ({
     set(state => ({
       selectedAssetIds: new Set(state.assets.map(a => a.id))
     }));
+  },
+  
+  toggleFavorite: (id) => {
+    set(state => {
+      const newSet = new Set(state.favoriteAssetIds);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return { favoriteAssetIds: newSet };
+    });
   },
 }));

@@ -32,6 +32,10 @@ export interface Asset {
   // 使用统计
   use_count: number;               // 使用次数
   
+  // 收藏状态
+  is_favorite: number;             // 0=未收藏, 1=已收藏
+  favorited_at: number | null;     // 收藏时间
+  
   // 云同步状态
   synced: number;                  // 0=未同步, 1=已同步
   cloud_url: string | null;        // R2 URL（同步后）

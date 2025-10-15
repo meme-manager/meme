@@ -25,10 +25,11 @@ export function AssetCard({ asset, selected, onSelect, onOpenDetail }: AssetCard
   const [isHovering, setIsHovering] = useState(false);
   const [justCopied, setJustCopied] = useState(false);
   const [assetTags, setAssetTags] = useState<Tag[]>([]);
-  const { incrementAssetUseCount, deleteAssetById } = useAssetStore();
+  const { incrementAssetUseCount, deleteAssetById, toggleFavorite, favoriteAssetIds } = useAssetStore();
   const { addToast } = useToastStore.getState();
   const imageSrc = convertFileSrc(asset.thumb_medium || asset.file_path);
   const isGif = asset.mime_type === 'image/gif';
+  const isFavorite = favoriteAssetIds.has(asset.id);
   
   // 加载资产标签
   useEffect(() => {
@@ -110,6 +111,12 @@ export function AssetCard({ asset, selected, onSelect, onOpenDetail }: AssetCard
       addToast('❌ 删除失败', 'error');
     }
   };
+  
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleFavorite(asset.id);
+    addToast(isFavorite ? '💔 已取消收藏' : '⭐ 已收藏', 'success');
+  };
 
   return (
     <div
@@ -142,6 +149,13 @@ export function AssetCard({ asset, selected, onSelect, onOpenDetail }: AssetCard
               <span className="copy-text">复制</span>
             </button>
             <div className="asset-card-actions">
+              <button 
+                className="asset-card-action-btn" 
+                title={isFavorite ? "取消收藏" : "收藏"}
+                onClick={handleToggleFavorite}
+              >
+                {isFavorite ? '⭐' : '☆'}
+              </button>
               <TagSelector
                 assetId={asset.id}
                 onTagsChange={loadAssetTags}
