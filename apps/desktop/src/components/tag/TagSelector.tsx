@@ -18,7 +18,7 @@ export function TagSelector({ assetId, trigger, onTagsChange }: TagSelectorProps
   const [open, setOpen] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   
-  console.log('[TagSelector] 渲染，open:', open);
+  console.log('[TagSelector] 渲染，open:', open, 'showCreateDialog:', showCreateDialog);
   
   useEffect(() => {
     console.log('[TagSelector] useEffect 触发，open:', open);

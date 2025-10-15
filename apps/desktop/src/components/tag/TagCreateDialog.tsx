@@ -25,6 +25,8 @@ export function TagCreateDialog({ open, onClose, onConfirm }: TagCreateDialogPro
   const [color, setColor] = useState(PRESET_COLORS[0].value);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  console.log('[TagCreateDialog] 渲染，open:', open);
 
   const handleSubmit = async () => {
     console.log('[TagCreateDialog] 提交，name:', name, 'color:', color);
