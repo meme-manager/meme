@@ -47,8 +47,8 @@ export const useSearchStore = create<SearchState>((set, get) => ({
   search: async () => {
     const { query, filters } = get();
     
-    // 如果没有查询词，清空结果
-    if (!query.trim()) {
+    // 如果没有查询词且没有筛选条件，清空结果
+    if (!query.trim() && Object.keys(filters).length === 0) {
       set({ results: null });
       return;
     }

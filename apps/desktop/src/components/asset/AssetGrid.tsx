@@ -12,12 +12,13 @@ import './AssetGrid.css';
 
 export function AssetGrid() {
   const { assets, selectedAssetIds, selectAsset, deselectAsset, clearSelection, selectAll, deleteAssetById } = useAssetStore();
-  const { query, results } = useSearchStore();
+  const { query, results, filters } = useSearchStore();
   const [detailAsset, setDetailAsset] = useState<Asset | null>(null);
   const { addToast } = useToastStore.getState();
   
   // 使用搜索结果或全部资产
-  const displayAssets = query && results ? results.assets : assets;
+  // 当有搜索结果时（无论是关键词搜索还是筛选），都使用搜索结果
+  const displayAssets = results ? results.assets : assets;
   
   const handleBatchDelete = async () => {
     if (selectedAssetIds.size === 0) return;
@@ -45,7 +46,10 @@ export function AssetGrid() {
     addToast(`成功删除 ${successCount} 张图片`, 'success');
   };
 
-  if (displayAssets.length === 0 && !query) {
+  // 判断是否有搜索或筛选条件
+  const hasSearchOrFilter = query || Object.keys(filters).length > 0;
+  
+  if (displayAssets.length === 0 && !hasSearchOrFilter) {
     return (
       <div className="asset-grid-empty">
         <DropZone />
@@ -53,13 +57,13 @@ export function AssetGrid() {
     );
   }
   
-  if (displayAssets.length === 0 && query) {
+  if (displayAssets.length === 0 && hasSearchOrFilter) {
     return (
       <div className="asset-grid-empty">
         <div className="empty-search">
           <div className="empty-search-icon">🔍</div>
           <h3>未找到匹配的表情包</h3>
-          <p>尝试使用不同的关键词搜索</p>
+          <p>尝试使用不同的关键词或筛选条件</p>
         </div>
       </div>
     );
