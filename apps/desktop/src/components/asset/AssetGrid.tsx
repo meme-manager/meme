@@ -22,16 +22,25 @@ export function AssetGrid() {
   // 当有搜索结果时（无论是关键词搜索还是筛选），都使用搜索结果
   let displayAssets = results ? results.assets : assets;
   
+  console.log('[AssetGrid] viewMode:', viewMode);
+  console.log('[AssetGrid] results:', results);
+  console.log('[AssetGrid] assets.length:', assets.length);
+  console.log('[AssetGrid] favoriteAssetIds.size:', favoriteAssetIds.size);
+  
   // 根据视图模式过滤
   if (!results) {
     if (viewMode === 'favorite') {
       displayAssets = assets.filter(asset => favoriteAssetIds.has(asset.id));
+      console.log('[AssetGrid] favorite displayAssets.length:', displayAssets.length);
     } else if (viewMode === 'recent') {
       // 按最后使用时间排序，取前50个
       displayAssets = [...assets]
         .filter(asset => asset.last_used_at)
         .sort((a, b) => (b.last_used_at || 0) - (a.last_used_at || 0))
         .slice(0, 50);
+      console.log('[AssetGrid] recent displayAssets.length:', displayAssets.length);
+    } else {
+      console.log('[AssetGrid] all displayAssets.length:', displayAssets.length);
     }
   }
   

@@ -8,7 +8,7 @@ import './Sidebar.css';
 export function Sidebar() {
   const { tags, loadTags } = useTagStore();
   const { assets, favoriteAssetIds, viewMode, setViewMode } = useAssetStore();
-  const { setFilters, clearResults } = useSearchStore();
+  const { setFilters } = useSearchStore();
   const [showTagManager, setShowTagManager] = useState(false);
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
   
@@ -17,9 +17,10 @@ export function Sidebar() {
   }, [loadTags]);
   
   const handleViewModeClick = (mode: ViewMode) => {
+    console.log('[Sidebar] handleViewModeClick:', mode);
     setViewMode(mode);
     setSelectedTagId(null);
-    clearResults(); // 清除搜索结果，显示全部
+    setFilters({}); // 清除筛选条件
   };
   
   const handleTagClick = (tagId: string) => {
