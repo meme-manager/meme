@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { convertFileSrc, invoke } from '@tauri-apps/api/core';
+import { ask } from '@tauri-apps/plugin-dialog';
 import { Dialog } from '../ui/Dialog';
 import { Button } from '../ui/Button';
 import { useTagStore } from '../../stores/tagStore';
@@ -33,6 +34,8 @@ export function AssetDetail({ asset, open, onClose }: AssetDetailProps) {
     if (asset && open) {
       loadAssetTags();
       loadTags();
+      setMessage(''); // 清空之前的消息
+      setLoading(false); // 重置 loading 状态
     }
   }, [asset, open]);
   
@@ -95,19 +98,42 @@ export function AssetDetail({ asset, open, onClose }: AssetDetailProps) {
   };
   
   const handleDelete = async () => {
-    if (!asset) return;
-    if (!confirm(`确定要删除 ${asset.file_name} 吗？`)) return;
+    console.log('[AssetDetail] handleDelete 被调用');
+    console.log('[AssetDetail] asset:', asset);
     
-    setLoading(true);
+    if (!asset) {
+      console.log('[AssetDetail] asset 为空，退出');
+      return;
+    }
+    
+    console.log('[AssetDetail] 准备显示确认对话框');
     try {
+      const confirmed = await ask(`确定要删除 ${asset.file_name} 吗？`, {
+        title: '确认删除',
+        kind: 'warning',
+      });
+      console.log('[AssetDetail] 用户确认结果:', confirmed);
+      
+      if (!confirmed) {
+        console.log('[AssetDetail] 用户取消删除');
+        return;
+      }
+      
+      console.log('[AssetDetail] 开始删除，设置 loading 状态');
+      setLoading(true);
+      
+      console.log('[AssetDetail] 调用 deleteAssetById:', asset.id);
       await deleteAssetById(asset.id);
+      console.log('[AssetDetail] 删除成功');
+      setLoading(false); // 重置 loading 状态
       setMessage('✅ 已删除');
       // 等待一下让用户看到成功消息，然后关闭
       setTimeout(() => {
+        console.log('[AssetDetail] 关闭对话框');
         onClose();
       }, 500);
     } catch (error) {
-      console.error('Failed to delete asset:', error);
+      console.error('[AssetDetail] 删除失败:', error);
       setMessage('❌ 删除失败: ' + (error instanceof Error ? error.message : String(error)));
       setLoading(false);
     }
@@ -135,7 +161,13 @@ export function AssetDetail({ asset, open, onClose }: AssetDetailProps) {
             >
               📋 复制
             </Button>
-            <Button onClick={handleDelete} disabled={loading}>
+            <Button 
+              onClick={() => {
+                console.log('[AssetDetail] 删除按钮被点击');
+                handleDelete();
+              }} 
+              disabled={loading}
+            >
               🗑️ 删除
             </Button>
           </div> 

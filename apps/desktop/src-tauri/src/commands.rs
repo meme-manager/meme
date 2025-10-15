@@ -213,6 +213,58 @@ pub async fn import_from_url(
     Ok(result)
 }
 
+/// 删除资产文件（包括原图和缩略图）
+#[tauri::command]
+pub async fn delete_asset_files(
+    app: AppHandle,
+    file_path: String,
+) -> Result<(), String> {
+    use std::fs;
+    use std::path::Path;
+    
+    println!("[Rust] 开始删除文件: {}", file_path);
+    
+    // 删除原图文件
+    let path = Path::new(&file_path);
+    if path.exists() {
+        println!("[Rust] 文件存在，正在删除...");
+        fs::remove_file(path)
+            .map_err(|e| format!("Failed to delete file: {}", e))?;
+        println!("[Rust] 原图文件删除成功");
+    } else {
+        println!("[Rust] 警告：文件不存在: {}", file_path);
+    }
+    
+    // 删除缩略图
+    let app_data_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to get app data dir: {}", e))?;
+    
+    let thumbs_dir = app_data_dir.join("thumbs");
+    println!("[Rust] 缩略图目录: {:?}", thumbs_dir);
+    
+    // 从文件路径提取哈希值
+    if let Some(file_stem) = path.file_stem().and_then(|s| s.to_str()) {
+        println!("[Rust] 文件哈希: {}", file_stem);
+        // 删除所有尺寸的缩略图
+        for size in &["128", "256", "512"] {
+            let thumb_path = thumbs_dir.join(format!("{}_{}.webp", file_stem, size));
+            if thumb_path.exists() {
+                match fs::remove_file(&thumb_path) {
+                    Ok(_) => println!("[Rust] 删除缩略图成功: {:?}", thumb_path),
+                    Err(e) => println!("[Rust] 删除缩略图失败: {:?}, 错误: {}", thumb_path, e),
+                }
+            } else {
+                println!("[Rust] 缩略图不存在: {:?}", thumb_path);
+            }
+        }
+    }
+    
+    println!("[Rust] 文件删除完成");
+    Ok(())
+}
+
 /// 复制图片到剪贴板
 #[tauri::command]
 pub async fn copy_image_to_clipboard(

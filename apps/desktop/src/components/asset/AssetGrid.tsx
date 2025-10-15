@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ask } from '@tauri-apps/plugin-dialog';
 import { useAssetStore } from '../../stores/assetStore';
 import { useSearchStore } from '../../stores/searchStore';
 import { useToastStore } from '../ui/Toast';
@@ -21,7 +22,12 @@ export function AssetGrid() {
   const handleBatchDelete = async () => {
     if (selectedAssetIds.size === 0) return;
     
-    if (!confirm(`确定要删除选中的 ${selectedAssetIds.size} 张图片吗？`)) return;
+    const confirmed = await ask(`确定要删除选中的 ${selectedAssetIds.size} 张图片吗？`, {
+      title: '确认批量删除',
+      kind: 'warning',
+    });
+    
+    if (!confirmed) return;
     
     const ids = Array.from(selectedAssetIds);
     let successCount = 0;

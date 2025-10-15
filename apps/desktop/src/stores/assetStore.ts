@@ -3,6 +3,7 @@
  */
 
 import { create } from 'zustand';
+import { invoke } from '@tauri-apps/api/core';
 import type { Asset } from '../types/asset';
 import { listAssets, deleteAsset, incrementUseCount } from '../lib/database/operations';
 import { importAsset, importAssets } from '../lib/assetManager';
@@ -142,12 +143,39 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   deleteAssetById: async (id) => {
     set({ loading: true, error: null });
     try {
+      console.log('[AssetStore] 开始删除资产:', id);
+      
+      // 先获取资产信息以获得文件路径
+      const asset = get().assets.find(a => a.id === id);
+      if (!asset) {
+        console.error('[AssetStore] 资产不存在:', id);
+        throw new Error('资产不存在');
+      }
+      
+      console.log('[AssetStore] 找到资产，文件路径:', asset.file_path);
+      
+      // 删除物理文件（原图和缩略图）
+      console.log('[AssetStore] 调用 delete_asset_files...');
+      await invoke('delete_asset_files', { 
+        filePath: asset.file_path 
+      });
+      console.log('[AssetStore] 物理文件删除成功');
+      
+      // 删除数据库记录（软删除）
+      console.log('[AssetStore] 删除数据库记录...');
       await deleteAsset(id);
+      console.log('[AssetStore] 数据库记录删除成功');
+      
+      // 刷新资产列表
+      console.log('[AssetStore] 刷新资产列表...');
       await get().refreshAssets();
+      console.log('[AssetStore] 删除完成');
     } catch (error) {
+      console.error('[AssetStore] 删除失败:', error);
       set({ 
         error: error instanceof Error ? error.message : String(error)
       });
+      throw error; // 重新抛出错误以便 UI 层处理
     } finally {
       set({ loading: false });
     }
