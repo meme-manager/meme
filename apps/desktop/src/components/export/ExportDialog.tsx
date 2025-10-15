@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { save } from '@tauri-apps/plugin-dialog';
 import { Dialog } from '../ui/Dialog';
 import { Button } from '../ui/Button';
 import { useToastStore } from '../ui/Toast';
@@ -18,26 +18,32 @@ export function ExportDialog({ open, assetIds, assetPaths, onClose }: ExportDial
   const [exportPath, setExportPath] = useState<string>('');
   const { addToast } = useToastStore.getState();
 
-  const handleSelectFolder = async () => {
+  const handleSelectFile = async () => {
     try {
-      const selected = await openDialog({
-        directory: true,
-        multiple: false,
-        title: '选择导出文件夹',
+      const timestamp = Date.now();
+      const defaultName = `meme_export_${timestamp}.zip`;
+      
+      const selected = await save({
+        defaultPath: defaultName,
+        filters: [{
+          name: 'ZIP 压缩包',
+          extensions: ['zip']
+        }],
+        title: '保存导出文件',
       });
 
-      if (selected && typeof selected === 'string') {
+      if (selected) {
         setExportPath(selected);
       }
     } catch (error) {
-      console.error('选择文件夹失败:', error);
-      addToast('❌ 选择文件夹失败', 'error');
+      console.error('选择保存位置失败:', error);
+      addToast('❌ 选择保存位置失败', 'error');
     }
   };
 
   const handleExport = async () => {
     if (!exportPath) {
-      addToast('⚠️ 请先选择导出文件夹', 'warning');
+      addToast('⚠️ 请先选择保存位置', 'warning');
       return;
     }
 
@@ -88,23 +94,23 @@ export function ExportDialog({ open, assetIds, assetPaths, onClose }: ExportDial
         </div>
 
         <div className="export-path-selector">
-          <label className="export-label">导出位置：</label>
+          <label className="export-label">保存位置：</label>
           <div className="export-path-input-group">
             <input
               type="text"
               className="export-path-input"
               value={exportPath}
               readOnly
-              placeholder="点击选择文件夹..."
+              placeholder="点击选择保存位置..."
             />
-            <Button onClick={handleSelectFolder}>
-              选择文件夹
+            <Button onClick={handleSelectFile}>
+              选择位置
             </Button>
           </div>
         </div>
 
         <div className="export-note">
-          💡 提示：图片将保持原文件名导出到选定文件夹
+          💡 提示：图片将打包成 ZIP 压缩包，保持原文件名
         </div>
       </div>
     </Dialog>

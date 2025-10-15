@@ -265,19 +265,39 @@ pub async fn delete_asset_files(
     Ok(())
 }
 
-/// 导出资产到指定文件夹
+/// 导出资产到 ZIP 压缩包
 #[tauri::command]
 pub async fn export_assets(
     asset_paths: Vec<String>,
     export_path: String,
 ) -> Result<usize, String> {
-    use std::fs;
+    use std::fs::{self, File};
+    use std::io::{Write, Read};
     use std::path::Path;
+    use zip::write::FileOptions;
+    use zip::ZipWriter;
     
-    let export_dir = Path::new(&export_path);
-    if !export_dir.exists() {
-        return Err("导出文件夹不存在".to_string());
-    }
+    // export_path 应该是一个 .zip 文件路径
+    let zip_path = if export_path.ends_with(".zip") {
+        export_path
+    } else {
+        // 如果用户选择的是文件夹，生成一个默认的 zip 文件名
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        format!("{}/meme_export_{}.zip", export_path, timestamp)
+    };
+    
+    println!("[Export] 创建 ZIP 文件: {}", zip_path);
+    
+    let file = File::create(&zip_path)
+        .map_err(|e| format!("无法创建 ZIP 文件: {}", e))?;
+    
+    let mut zip = ZipWriter::new(file);
+    let options = FileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated)
+        .unix_permissions(0o755);
     
     let mut success_count = 0;
     
@@ -290,22 +310,41 @@ pub async fn export_assets(
         
         // 获取文件名
         let file_name = source.file_name()
+            .and_then(|n| n.to_str())
             .ok_or_else(|| format!("无效的文件名: {}", asset_path))?;
         
-        let dest = export_dir.join(file_name);
-        
-        // 复制文件
-        match fs::copy(&source, &dest) {
-            Ok(_) => {
-                println!("[Export] 导出成功: {:?}", dest);
-                success_count += 1;
+        // 读取文件内容
+        match fs::read(&source) {
+            Ok(content) => {
+                // 添加到 ZIP
+                match zip.start_file(file_name, options) {
+                    Ok(_) => {
+                        match zip.write_all(&content) {
+                            Ok(_) => {
+                                println!("[Export] 添加到 ZIP 成功: {}", file_name);
+                                success_count += 1;
+                            }
+                            Err(e) => {
+                                println!("[Export] 写入 ZIP 失败: {}, 错误: {}", file_name, e);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        println!("[Export] 创建 ZIP 条目失败: {}, 错误: {}", file_name, e);
+                    }
+                }
             }
             Err(e) => {
-                println!("[Export] 导出失败: {:?}, 错误: {}", dest, e);
+                println!("[Export] 读取文件失败: {}, 错误: {}", asset_path, e);
             }
         }
     }
     
+    // 完成 ZIP 文件
+    zip.finish()
+        .map_err(|e| format!("完成 ZIP 文件失败: {}", e))?;
+    
+    println!("[Export] ZIP 文件创建完成: {}", zip_path);
     Ok(success_count)
 }
 
