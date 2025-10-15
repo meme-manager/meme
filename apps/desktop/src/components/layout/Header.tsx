@@ -53,7 +53,7 @@ export function Header() {
           </button>
           
           {/* 搜索历史下拉框 */}
-          {showHistory && searchHistory.length > 0 && (
+          {showHistory && searchHistory.length > 0 && !query && (
             <div className="search-history">
               <div className="search-history-header">
                 <span>搜索历史</span>
