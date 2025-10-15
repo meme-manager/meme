@@ -12,6 +12,7 @@ interface AssetCardProps {
   asset: Asset;
   selected: boolean;
   onSelect: () => void;
+  onOpenDetail?: () => void;
 }
 
 interface Tag {
@@ -20,7 +21,7 @@ interface Tag {
   color: string | null;
 }
 
-export function AssetCard({ asset, selected, onSelect }: AssetCardProps) {
+export function AssetCard({ asset, selected, onSelect, onOpenDetail }: AssetCardProps) {
   const [isHovering, setIsHovering] = useState(false);
   const [justCopied, setJustCopied] = useState(false);
   const [assetTags, setAssetTags] = useState<Tag[]>([]);
@@ -62,28 +63,12 @@ export function AssetCard({ asset, selected, onSelect }: AssetCardProps) {
       return;
     }
     
-    // 普通点击：复制到剪贴板（仅在不悬浮时）
+    // 普通点击：打开详情页（仅在不悬浮时）
     // 注意：悬浮时的按钮会自己阻止冒泡，所以这里不会被触发
-    console.log('[AssetCard] 检查是否复制，isHovering:', isHovering);
+    console.log('[AssetCard] 检查是否打开详情，isHovering:', isHovering);
     if (!isHovering) {
-      try {
-        await invoke('copy_image_to_clipboard', {
-          filePath: asset.file_path
-        });
-        
-        // 视觉反馈
-        setJustCopied(true);
-        setTimeout(() => setJustCopied(false), 500);
-        
-        // Toast 提示
-        addToast('✅ 已复制', 'success');
-        
-        // 更新使用次数
-        await incrementAssetUseCount(asset.id);
-      } catch (error) {
-        console.error('复制失败:', error);
-        addToast('❌ 复制失败', 'error');
-      }
+      console.log('[AssetCard] 打开详情页');
+      onOpenDetail?.();
     }
   };
   
