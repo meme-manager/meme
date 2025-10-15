@@ -1,2 +1,8 @@
 
 node_modules/*
+.husky/*
+apps/workers/node_modules/*
+packages/shared/node_modules/*
+apps/desktop/node_modules/*
+apps/desktop/src-tauri/target/release/*
+apps/desktop/src-tauri/target/debug/*
