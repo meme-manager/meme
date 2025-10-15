@@ -3,9 +3,9 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 20px;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
   height: 60px;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .header-left {
@@ -15,7 +15,7 @@
 .header-title {
   font-size: 18px;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -37,15 +37,17 @@
 .search-input {
   flex: 1;
   padding: 10px 16px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-secondary);
   border-radius: 8px;
   font-size: 14px;
   outline: none;
   transition: all 0.2s;
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .search-input:focus {
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 

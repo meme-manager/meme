@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useSearchStore } from '../../stores/searchStore';
 import { useAssetStore } from '../../stores/assetStore';
+import { useThemeStore } from '../../stores/themeStore';
 import { ImportUrlDialog } from '../import/ImportUrlDialog';
 import { FilterPanel } from '../search/FilterPanel';
 import { StatsPanel } from '../stats/StatsPanel';
@@ -9,6 +10,7 @@ import './Header.css';
 export function Header() {
   const { query, setQuery, searchHistory, clearHistory } = useSearchStore();
   const { importMultipleAssets, gridSize, setGridSize } = useAssetStore();
+  const { theme, toggleTheme } = useThemeStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showUrlDialog, setShowUrlDialog] = useState(false);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
@@ -120,6 +122,13 @@ export function Header() {
         </button>
         <button className="header-btn" onClick={() => setShowStatsPanel(true)} title="统计信息">
           📊
+        </button>
+        <button 
+          className="header-btn" 
+          onClick={toggleTheme} 
+          title={theme === 'light' ? '切换到深色模式' : '切换到浅色模式'}
+        >
+          {theme === 'light' ? '🌙' : '☀️'}
         </button>
         <input
           ref={fileInputRef}
