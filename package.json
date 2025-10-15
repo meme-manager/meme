@@ -21,8 +21,11 @@
     "env:init:dev": "node scripts/env-setup.js init development",
     "env:init:staging": "node scripts/env-setup.js init staging",
     "env:init:prod": "node scripts/env-setup.js init production",
-    "deploy:staging": "cd apps/worker && pnpm wrangler deploy --env staging",
-    "deploy:prod": "cd apps/worker && pnpm wrangler deploy --env production"
+    "deploy": "cd apps/workers && ./deploy.sh",
+    "deploy:staging": "cd apps/workers && pnpm wrangler deploy --env staging",
+    "deploy:prod": "cd apps/workers && pnpm wrangler deploy --env production",
+    "workers:dev": "cd apps/workers && pnpm dev",
+    "workers:deploy": "cd apps/workers && pnpm deploy"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
