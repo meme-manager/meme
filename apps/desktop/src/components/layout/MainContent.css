@@ -1,12 +1,12 @@
 .main-content {
   flex: 1;
   overflow-y: auto;
-  background: #ffffff;
+  background: var(--bg-secondary);
   position: relative;
 }
 
 .main-content-dragging {
-  background: #f0f9ff;
+  background: var(--bg-tertiary);
 }
 
 .drag-overlay {
