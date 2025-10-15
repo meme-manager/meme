@@ -41,17 +41,17 @@
 .color-picker {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  max-width: 200px;
+  gap: 16px;
 }
 
 .color-option {
-  width: 32px;
-  height: 32px;
+  aspect-ratio: 1;
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.15s;
   border: 3px solid transparent;
+  min-width: 40px;
+  min-height: 40px;
 }
 
 .color-option:hover {
