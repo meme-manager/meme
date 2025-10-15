@@ -63,13 +63,10 @@ export function AssetCard({ asset, selected, onSelect, onOpenDetail }: AssetCard
       return;
     }
     
-    // 普通点击：打开详情页（仅在不悬浮时）
-    // 注意：悬浮时的按钮会自己阻止冒泡，所以这里不会被触发
-    console.log('[AssetCard] 检查是否打开详情，isHovering:', isHovering);
-    if (!isHovering) {
-      console.log('[AssetCard] 打开详情页');
-      onOpenDetail?.();
-    }
+    // 普通点击：打开详情页
+    // 注意：按钮会自己阻止冒泡，所以点击按钮不会触发这里
+    console.log('[AssetCard] 打开详情页');
+    onOpenDetail?.();
   };
   
   const handleCopy = async (e: React.MouseEvent) => {
