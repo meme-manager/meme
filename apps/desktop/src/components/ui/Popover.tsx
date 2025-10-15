@@ -10,13 +10,28 @@ interface PopoverProps {
 
 export function Popover({ trigger, content, open: controlledOpen, onOpenChange }: PopoverProps) {
   const [internalOpen, setInternalOpen] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
   const popoverRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
   
   const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
   
+  // 计算 Popover 位置
+  const updatePosition = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + 4,
+        left: rect.left + rect.width / 2,
+      });
+    }
+  };
+  
   const handleToggle = () => {
     const newOpen = !isOpen;
+    if (newOpen) {
+      updatePosition();
+    }
     if (controlledOpen === undefined) {
       setInternalOpen(newOpen);
     }
@@ -56,7 +71,15 @@ export function Popover({ trigger, content, open: controlledOpen, onOpenChange }
       </div>
       
       {isOpen && (
-        <div ref={popoverRef} className="popover-content">
+        <div 
+          ref={popoverRef} 
+          className="popover-content"
+          style={{
+            top: `${position.top}px`,
+            left: `${position.left}px`,
+            transform: 'translateX(-50%)',
+          }}
+        >
           {content}
         </div>
       )}

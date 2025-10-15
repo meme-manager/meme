@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { convertFileSrc, invoke } from '@tauri-apps/api/core';
+import { ask } from '@tauri-apps/plugin-dialog';
 import { useAssetStore } from '../../stores/assetStore';
 import { useToastStore } from '../ui/Toast';
 import { getAssetTags } from '../../lib/database/operations';
@@ -23,7 +24,7 @@ export function AssetCard({ asset, selected, onSelect }: AssetCardProps) {
   const [isHovering, setIsHovering] = useState(false);
   const [justCopied, setJustCopied] = useState(false);
   const [assetTags, setAssetTags] = useState<Tag[]>([]);
-  const { incrementAssetUseCount } = useAssetStore();
+  const { incrementAssetUseCount, deleteAssetById } = useAssetStore();
   const { addToast } = useToastStore.getState();
   const imageSrc = convertFileSrc(asset.thumb_medium || asset.file_path);
   const isGif = asset.mime_type === 'image/gif';
@@ -105,6 +106,25 @@ export function AssetCard({ asset, selected, onSelect }: AssetCardProps) {
       addToast('❌ 复制失败', 'error');
     }
   };
+  
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    try {
+      const confirmed = await ask(`确定要删除 ${asset.file_name} 吗？`, {
+        title: '确认删除',
+        kind: 'warning',
+      });
+      
+      if (!confirmed) return;
+      
+      await deleteAssetById(asset.id);
+      addToast('🗑️ 已删除', 'success');
+    } catch (error) {
+      console.error('删除失败:', error);
+      addToast('❌ 删除失败', 'error');
+    }
+  };
 
   return (
     <div
@@ -146,7 +166,11 @@ export function AssetCard({ asset, selected, onSelect }: AssetCardProps) {
                   </button>
                 }
               />
-              <button className="asset-card-action-btn" title="删除">
+              <button 
+                className="asset-card-action-btn" 
+                title="删除"
+                onClick={handleDelete}
+              >
                 🗑️
               </button>
             </div>
