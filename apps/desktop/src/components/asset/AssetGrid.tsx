@@ -13,7 +13,7 @@ import type { Asset } from '../../types/asset';
 import './AssetGrid.css';
 
 export function AssetGrid() {
-  const { assets, selectedAssetIds, selectAsset, deselectAsset, clearSelection, selectAll, deleteAssetById, favoriteAssetIds, viewMode } = useAssetStore();
+  const { assets, selectedAssetIds, selectAsset, deselectAsset, clearSelection, selectAll, deleteAssetById, favoriteAssetIds, viewMode, gridSize } = useAssetStore();
   const { query, results, filters } = useSearchStore();
   const { addToast } = useToastStore.getState();
   const [detailAsset, setDetailAsset] = useState<Asset | null>(null);
@@ -102,7 +102,7 @@ export function AssetGrid() {
         </div>
       )}
       
-      <div className="asset-grid">
+      <div className={`asset-grid asset-grid-${gridSize}`}>
         {displayAssets.map(asset => {
           // 查找匹配信息
           const matchInfo = results?.matches?.find(m => m.asset.id === asset.id);

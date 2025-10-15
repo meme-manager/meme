@@ -11,6 +11,7 @@ import { useImportProgress } from '../components/import/ImportProgress';
 import { useToastStore } from '../components/ui/Toast';
 
 export type ViewMode = 'all' | 'favorite' | 'recent';
+export type GridSize = 'small' | 'medium' | 'large';
 
 interface AssetState {
   assets: Asset[];
@@ -19,6 +20,7 @@ interface AssetState {
   selectedAssetIds: Set<string>;
   favoriteAssetIds: Set<string>; // 临时存储收藏状态
   viewMode: ViewMode; // 当前视图模式
+  gridSize: GridSize; // 网格大小
   
   // Actions
   loadAssets: () => Promise<void>;
@@ -29,6 +31,7 @@ interface AssetState {
   incrementAssetUseCount: (id: string) => Promise<void>;
   toggleFavorite: (id: string) => void;
   setViewMode: (mode: ViewMode) => void;
+  setGridSize: (size: GridSize) => void;
   selectAsset: (id: string) => void;
   deselectAsset: (id: string) => void;
   clearSelection: () => void;
@@ -42,6 +45,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   selectedAssetIds: new Set(),
   favoriteAssetIds: new Set(),
   viewMode: 'all',
+  gridSize: 'medium',
   
   loadAssets: async () => {
     set({ loading: true, error: null });
@@ -243,5 +247,9 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   
   setViewMode: (mode) => {
     set({ viewMode: mode });
+  },
+  
+  setGridSize: (size) => {
+    set({ gridSize: size });
   },
 }));

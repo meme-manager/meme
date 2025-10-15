@@ -85,6 +85,38 @@
   background: #f3f4f6;
 }
 
+/* 网格大小选择器 */
+.grid-size-selector {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: #f3f4f6;
+  border-radius: 8px;
+}
+
+.grid-size-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+  color: #6b7280;
+}
+
+.grid-size-btn:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.grid-size-btn.active {
+  background: white;
+  color: #3b82f6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 /* 搜索历史 */
 .search-history {
   position: absolute;

@@ -21,10 +21,27 @@
   gap: 8px;
 }
 
-.asset-grid {
+/* 小图 */
+.asset-grid-small {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  padding: 16px;
+}
+
+/* 中图（默认） */
+.asset-grid-medium {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 16px;
+  padding: 24px;
+}
+
+/* 大图 */
+.asset-grid-large {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
   padding: 24px;
 }
 

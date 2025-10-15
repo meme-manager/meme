@@ -7,7 +7,7 @@ import './Header.css';
 
 export function Header() {
   const { query, setQuery, searchHistory, clearHistory } = useSearchStore();
-  const { importMultipleAssets } = useAssetStore();
+  const { importMultipleAssets, gridSize, setGridSize } = useAssetStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showUrlDialog, setShowUrlDialog] = useState(false);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
@@ -85,6 +85,31 @@ export function Header() {
       </div>
       
       <div className="header-right">
+        {/* 网格大小切换 */}
+        <div className="grid-size-selector">
+          <button 
+            className={`grid-size-btn ${gridSize === 'small' ? 'active' : ''}`}
+            onClick={() => setGridSize('small')}
+            title="小图"
+          >
+            ⊞
+          </button>
+          <button 
+            className={`grid-size-btn ${gridSize === 'medium' ? 'active' : ''}`}
+            onClick={() => setGridSize('medium')}
+            title="中图"
+          >
+            ⊟
+          </button>
+          <button 
+            className={`grid-size-btn ${gridSize === 'large' ? 'active' : ''}`}
+            onClick={() => setGridSize('large')}
+            title="大图"
+          >
+            ⊠
+          </button>
+        </div>
+        
         <button className="header-btn" onClick={handleImportClick} title="导入本地图片">
           📁
         </button>
