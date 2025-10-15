@@ -44,11 +44,14 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   viewMode: 'all',
   
   loadAssets: async () => {
+    console.log('[assetStore] loadAssets 开始');
     set({ loading: true, error: null });
     try {
       const assets = await listAssets();
+      console.log('[assetStore] loadAssets 成功，assets.length:', assets.length);
       set({ assets, loading: false });
     } catch (error) {
+      console.error('[assetStore] loadAssets 失败:', error);
       set({ 
         error: error instanceof Error ? error.message : String(error),
         loading: false 
