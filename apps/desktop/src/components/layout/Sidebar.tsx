@@ -17,7 +17,6 @@ export function Sidebar() {
   }, [loadTags]);
   
   const handleViewModeClick = (mode: ViewMode) => {
-    console.log('[Sidebar] handleViewModeClick:', mode);
     setViewMode(mode);
     setSelectedTagId(null);
     setFilters({}); // 清除筛选条件
