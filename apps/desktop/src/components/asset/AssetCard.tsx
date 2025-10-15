@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { ask } from '@tauri-apps/plugin-dialog';
+import { invoke } from '@tauri-apps/api/core';
+import { convertFileSrc } from '@tauri-apps/api/core';
 import { useAssetStore } from '../../stores/assetStore';
 import { useToastStore } from '../ui/Toast';
+import { ContextMenu, type ContextMenuItem } from '../ui/ContextMenu';
 import { getAssetTags } from '../../lib/database/operations';
 import { TagSelector } from '../tag/TagSelector';
 import type { Asset } from '../../types/asset';
@@ -26,6 +28,7 @@ export function AssetCard({ asset, selected, onSelect, onOpenDetail, onQuickPrev
   const [isHovering, setIsHovering] = useState(false);
   const [justCopied, setJustCopied] = useState(false);
   const [assetTags, setAssetTags] = useState<Tag[]>([]);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const { incrementAssetUseCount, deleteAssetById, toggleFavorite, favoriteAssetIds } = useAssetStore();
   const { addToast } = useToastStore.getState();
   const imageSrc = convertFileSrc(asset.thumb_medium || asset.file_path);
@@ -128,22 +131,83 @@ export function AssetCard({ asset, selected, onSelect, onOpenDetail, onQuickPrev
     }
   };
   
-  const handleToggleFavorite = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleToggleFavorite = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     toggleFavorite(asset.id);
     addToast(isFavorite ? '💔 已取消收藏' : '⭐ 已收藏', 'success');
   };
+  
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ x: e.clientX, y: e.clientY });
+  };
+  
+  const handleShowInFolder = async () => {
+    try {
+      await invoke('show_in_folder', { path: asset.file_path });
+    } catch (error) {
+      console.error('打开文件夹失败:', error);
+      addToast('❌ 打开文件夹失败', 'error');
+    }
+  };
+  
+  const contextMenuItems: ContextMenuItem[] = [
+    {
+      label: '复制',
+      icon: '📋',
+      onClick: () => handleCopy({ stopPropagation: () => {} } as any),
+    },
+    {
+      label: isFavorite ? '取消收藏' : '收藏',
+      icon: isFavorite ? '💔' : '⭐',
+      onClick: handleToggleFavorite,
+    },
+    {
+      label: '添加标签',
+      icon: '🏷️',
+      onClick: () => {}, // 标签选择器通过 Popover 打开
+      disabled: true,
+    },
+    {
+      divider: true,
+      label: '',
+      onClick: () => {},
+    },
+    {
+      label: '预览',
+      icon: '👁️',
+      onClick: () => onOpenDetail?.(),
+    },
+    {
+      label: '在文件夹显示',
+      icon: '📁',
+      onClick: handleShowInFolder,
+    },
+    {
+      divider: true,
+      label: '',
+      onClick: () => {},
+    },
+    {
+      label: '删除',
+      icon: '🗑️',
+      onClick: () => handleDelete({ stopPropagation: () => {} } as any),
+    },
+  ];
 
   return (
-    <div
-      className={`asset-card ${selected ? 'asset-card-selected' : ''} ${justCopied ? 'asset-card-copied' : ''}`}
-      onClick={handleClick}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
-      draggable
-      onDragStart={handleDragStart}
-      title="可以拖拽到其他应用"
-    >
+    <>
+      <div
+        className={`asset-card ${selected ? 'asset-card-selected' : ''} ${justCopied ? 'asset-card-copied' : ''}`}
+        onClick={handleClick}
+        onContextMenu={handleContextMenu}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+        draggable
+        onDragStart={handleDragStart}
+        title="可以拖拽到其他应用"
+      >
       <div className="asset-card-image">
         <img
           src={imageSrc}
@@ -220,5 +284,16 @@ export function AssetCard({ asset, selected, onSelect, onOpenDetail, onQuickPrev
         <div className="asset-card-check">✓</div>
       )}
     </div>
+    
+    {/* 右键菜单 */}
+    {contextMenu && (
+      <ContextMenu
+        x={contextMenu.x}
+        y={contextMenu.y}
+        items={contextMenuItems}
+        onClose={() => setContextMenu(null)}
+      />
+    )}
+  </>
   );
 }
