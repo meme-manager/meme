@@ -12,7 +12,7 @@ import type { Asset } from '../../types/asset';
 import './AssetGrid.css';
 
 export function AssetGrid() {
-  const { assets, selectedAssetIds, selectAsset, deselectAsset, clearSelection, selectAll, deleteAssetById } = useAssetStore();
+  const { assets, selectedAssetIds, selectAsset, deselectAsset, clearSelection, selectAll, deleteAssetById, favoriteAssetIds, viewMode } = useAssetStore();
   const { query, results, filters } = useSearchStore();
   const { addToast } = useToastStore.getState();
   const [detailAsset, setDetailAsset] = useState<Asset | null>(null);
@@ -20,7 +20,20 @@ export function AssetGrid() {
   
   // 使用搜索结果或全部资产
   // 当有搜索结果时（无论是关键词搜索还是筛选），都使用搜索结果
-  const displayAssets = results ? results.assets : assets;
+  let displayAssets = results ? results.assets : assets;
+  
+  // 根据视图模式过滤
+  if (!results) {
+    if (viewMode === 'favorite') {
+      displayAssets = assets.filter(asset => favoriteAssetIds.has(asset.id));
+    } else if (viewMode === 'recent') {
+      // 按最后使用时间排序，取前50个
+      displayAssets = [...assets]
+        .filter(asset => asset.last_used_at)
+        .sort((a, b) => (b.last_used_at || 0) - (a.last_used_at || 0))
+        .slice(0, 50);
+    }
+  }
   
   const handleBatchDelete = async () => {
     if (selectedAssetIds.size === 0) return;

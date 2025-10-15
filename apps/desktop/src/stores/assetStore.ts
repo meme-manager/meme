@@ -10,12 +10,15 @@ import { importAsset, importAssets } from '../lib/assetManager';
 import { useImportProgress } from '../components/import/ImportProgress';
 import { useToastStore } from '../components/ui/Toast';
 
+export type ViewMode = 'all' | 'favorite' | 'recent';
+
 interface AssetState {
   assets: Asset[];
   loading: boolean;
   error: string | null;
   selectedAssetIds: Set<string>;
   favoriteAssetIds: Set<string>; // 临时存储收藏状态
+  viewMode: ViewMode; // 当前视图模式
   
   // Actions
   loadAssets: () => Promise<void>;
@@ -25,6 +28,7 @@ interface AssetState {
   deleteAssetById: (id: string) => Promise<void>;
   incrementAssetUseCount: (id: string) => Promise<void>;
   toggleFavorite: (id: string) => void;
+  setViewMode: (mode: ViewMode) => void;
   selectAsset: (id: string) => void;
   deselectAsset: (id: string) => void;
   clearSelection: () => void;
@@ -37,6 +41,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   error: null,
   selectedAssetIds: new Set(),
   favoriteAssetIds: new Set(),
+  viewMode: 'all',
   
   loadAssets: async () => {
     set({ loading: true, error: null });
@@ -234,5 +239,9 @@ export const useAssetStore = create<AssetState>((set, get) => ({
       }
       return { favoriteAssetIds: newSet };
     });
+  },
+  
+  setViewMode: (mode) => {
+    set({ viewMode: mode });
   },
 }));
