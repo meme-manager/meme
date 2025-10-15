@@ -13,6 +13,10 @@ export function Header() {
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   
+  console.log('[Header] searchHistory:', searchHistory);
+  console.log('[Header] showHistory:', showHistory);
+  console.log('[Header] query:', query);
+  
   const handleImportClick = () => {
     fileInputRef.current?.click();
   };
