@@ -13,6 +13,7 @@ interface AssetCardProps {
   selected: boolean;
   onSelect: () => void;
   onOpenDetail?: () => void;
+  onQuickPreview?: () => void;
 }
 
 interface Tag {
@@ -21,7 +22,7 @@ interface Tag {
   color: string | null;
 }
 
-export function AssetCard({ asset, selected, onSelect, onOpenDetail }: AssetCardProps) {
+export function AssetCard({ asset, selected, onSelect, onOpenDetail, onQuickPreview }: AssetCardProps) {
   const [isHovering, setIsHovering] = useState(false);
   const [justCopied, setJustCopied] = useState(false);
   const [assetTags, setAssetTags] = useState<Tag[]>([]);
@@ -30,6 +31,21 @@ export function AssetCard({ asset, selected, onSelect, onOpenDetail }: AssetCard
   const imageSrc = convertFileSrc(asset.thumb_medium || asset.file_path);
   const isGif = asset.mime_type === 'image/gif';
   const isFavorite = favoriteAssetIds.has(asset.id);
+  
+  // 监听空格键预览
+  useEffect(() => {
+    if (!isHovering) return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === ' ' && !e.repeat) {
+        e.preventDefault();
+        onQuickPreview?.();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isHovering, onQuickPreview]);
   
   // 加载资产标签
   useEffect(() => {

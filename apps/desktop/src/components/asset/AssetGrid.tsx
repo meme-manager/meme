@@ -5,6 +5,7 @@ import { useSearchStore } from '../../stores/searchStore';
 import { useToastStore } from '../ui/Toast';
 import { AssetCard } from './AssetCard';
 import { AssetDetail } from './AssetDetail';
+import { QuickPreview } from './QuickPreview';
 import { BatchTagSelector } from '../tag/BatchTagSelector';
 import { DropZone } from './DropZone';
 import { Button } from '../ui/Button';
@@ -16,6 +17,7 @@ export function AssetGrid() {
   const { query, results, filters } = useSearchStore();
   const { addToast } = useToastStore.getState();
   const [detailAsset, setDetailAsset] = useState<Asset | null>(null);
+  const [previewAsset, setPreviewAsset] = useState<Asset | null>(null);
   const [showBatchTagSelector, setShowBatchTagSelector] = useState(false);
   
   // 使用搜索结果或全部资产
@@ -114,6 +116,7 @@ export function AssetGrid() {
               }
             }}
             onOpenDetail={() => setDetailAsset(asset)}
+            onQuickPreview={() => setPreviewAsset(asset)}
           />
         ))}
       </div>
@@ -125,6 +128,11 @@ export function AssetGrid() {
           onClose={() => setDetailAsset(null)}
         />
       )}
+      
+      <QuickPreview
+        asset={previewAsset}
+        onClose={() => setPreviewAsset(null)}
+      />
       
       <BatchTagSelector
         open={showBatchTagSelector}
