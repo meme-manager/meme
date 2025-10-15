@@ -265,6 +265,50 @@ pub async fn delete_asset_files(
     Ok(())
 }
 
+/// 导出资产到指定文件夹
+#[tauri::command]
+pub async fn export_assets(
+    asset_paths: Vec<String>,
+    export_path: String,
+) -> Result<usize, String> {
+    use std::fs;
+    use std::path::Path;
+    
+    let export_dir = Path::new(&export_path);
+    if !export_dir.exists() {
+        return Err("导出文件夹不存在".to_string());
+    }
+    
+    let mut success_count = 0;
+    
+    for asset_path in asset_paths {
+        let source = Path::new(&asset_path);
+        if !source.exists() {
+            println!("[Export] 文件不存在，跳过: {}", asset_path);
+            continue;
+        }
+        
+        // 获取文件名
+        let file_name = source.file_name()
+            .ok_or_else(|| format!("无效的文件名: {}", asset_path))?;
+        
+        let dest = export_dir.join(file_name);
+        
+        // 复制文件
+        match fs::copy(&source, &dest) {
+            Ok(_) => {
+                println!("[Export] 导出成功: {:?}", dest);
+                success_count += 1;
+            }
+            Err(e) => {
+                println!("[Export] 导出失败: {:?}, 错误: {}", dest, e);
+            }
+        }
+    }
+    
+    Ok(success_count)
+}
+
 /// 复制图片到剪贴板
 #[tauri::command]
 pub async fn copy_image_to_clipboard(

@@ -13,6 +13,7 @@ pub fn run() {
             commands::import_from_url,
             commands::copy_image_to_clipboard,
             commands::delete_asset_files,
+            commands::export_assets,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

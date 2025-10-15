@@ -44,16 +44,20 @@ export function ExportDialog({ open, assetIds, assetPaths, onClose }: ExportDial
     setExporting(true);
     try {
       // 调用后端导出功能
-      await invoke('export_assets', {
+      const successCount = await invoke<number>('export_assets', {
         assetPaths,
         exportPath,
       });
 
-      addToast(`✅ 成功导出 ${assetIds.length} 张图片`, 'success');
+      if (successCount === assetIds.length) {
+        addToast(`✅ 成功导出 ${successCount} 张图片`, 'success');
+      } else {
+        addToast(`⚠️ 导出完成：成功 ${successCount} 张，失败 ${assetIds.length - successCount} 张`, 'warning');
+      }
       onClose();
     } catch (error) {
       console.error('导出失败:', error);
-      addToast('❌ 导出失败', 'error');
+      addToast(`❌ 导出失败: ${error}`, 'error');
     } finally {
       setExporting(false);
     }
