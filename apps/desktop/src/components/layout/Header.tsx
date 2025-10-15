@@ -1,20 +1,18 @@
 import { useRef, useState } from 'react';
 import { useSearchStore } from '../../stores/searchStore';
 import { useAssetStore } from '../../stores/assetStore';
-import { useThemeStore } from '../../stores/themeStore';
 import { ImportUrlDialog } from '../import/ImportUrlDialog';
 import { FilterPanel } from '../search/FilterPanel';
-import { StatsPanel } from '../stats/StatsPanel';
+import { SettingsPanel } from '../settings/SettingsPanel';
 import './Header.css';
 
 export function Header() {
   const { query, setQuery, searchHistory, clearHistory } = useSearchStore();
   const { importMultipleAssets, gridSize, setGridSize } = useAssetStore();
-  const { theme, toggleTheme } = useThemeStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showUrlDialog, setShowUrlDialog] = useState(false);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
-  const [showStatsPanel, setShowStatsPanel] = useState(false);
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   
   const handleImportClick = () => {
@@ -120,15 +118,8 @@ export function Header() {
         <button className="header-btn" onClick={() => setShowUrlDialog(true)} title="从URL导入">
           🔗
         </button>
-        <button className="header-btn" onClick={() => setShowStatsPanel(true)} title="统计信息">
-          📊
-        </button>
-        <button 
-          className="header-btn" 
-          onClick={toggleTheme} 
-          title={theme === 'light' ? '切换到深色模式' : '切换到浅色模式'}
-        >
-          {theme === 'light' ? '🌙' : '☀️'}
+        <button className="header-btn" onClick={() => setShowSettingsPanel(true)} title="设置">
+          ⚙️
         </button>
         <input
           ref={fileInputRef}
@@ -150,9 +141,9 @@ export function Header() {
         onClose={() => setShowFilterPanel(false)}
       />
       
-      <StatsPanel
-        open={showStatsPanel}
-        onClose={() => setShowStatsPanel(false)}
+      <SettingsPanel
+        open={showSettingsPanel}
+        onClose={() => setShowSettingsPanel(false)}
       />
     </header>
   );

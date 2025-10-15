@@ -3,6 +3,7 @@ import { ask } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { useAssetStore } from '../../stores/assetStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 import { useToastStore } from '../ui/Toast';
 import { ContextMenu, type ContextMenuItem } from '../ui/ContextMenu';
 import { getAssetTags } from '../../lib/database/operations';
@@ -34,14 +35,15 @@ export function AssetCard({ asset, selected, matchInfo, onSelect, onOpenDetail, 
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const { incrementAssetUseCount, deleteAssetById, toggleFavorite, favoriteAssetIds } = useAssetStore();
+  const { autoPlayGif } = useSettingsStore();
   const { addToast } = useToastStore.getState();
   
   // 判断是否是动图
   const isAnimated = asset.mime_type === 'image/gif' || asset.mime_type === 'image/webp';
   const isGif = asset.mime_type === 'image/gif';
   
-  // 动图在可见时使用原图，不可见或非动图使用缩略图
-  const imageSrc = (isAnimated && isVisible) 
+  // 动图在可见时且开启自动播放时使用原图，否则使用缩略图
+  const imageSrc = (isAnimated && isVisible && autoPlayGif) 
     ? convertFileSrc(asset.file_path) 
     : convertFileSrc(asset.thumb_medium || asset.file_path);
   
