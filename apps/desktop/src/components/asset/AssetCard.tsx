@@ -143,14 +143,6 @@ export function AssetCard({ asset, selected, onSelect, onOpenDetail, onQuickPrev
     setContextMenu({ x: e.clientX, y: e.clientY });
   };
   
-  const handleShowInFolder = async () => {
-    try {
-      await invoke('show_in_folder', { path: asset.file_path });
-    } catch (error) {
-      console.error('打开文件夹失败:', error);
-      addToast('❌ 打开文件夹失败', 'error');
-    }
-  };
   
   const contextMenuItems: ContextMenuItem[] = [
     {
@@ -164,12 +156,6 @@ export function AssetCard({ asset, selected, onSelect, onOpenDetail, onQuickPrev
       onClick: handleToggleFavorite,
     },
     {
-      label: '添加标签',
-      icon: '🏷️',
-      onClick: () => {}, // 标签选择器通过 Popover 打开
-      disabled: true,
-    },
-    {
       divider: true,
       label: '',
       onClick: () => {},
@@ -177,12 +163,12 @@ export function AssetCard({ asset, selected, onSelect, onOpenDetail, onQuickPrev
     {
       label: '预览',
       icon: '👁️',
-      onClick: () => onOpenDetail?.(),
+      onClick: () => onQuickPreview?.(),
     },
     {
-      label: '在文件夹显示',
-      icon: '📁',
-      onClick: handleShowInFolder,
+      label: '查看详情',
+      icon: '📄',
+      onClick: () => onOpenDetail?.(),
     },
     {
       divider: true,
