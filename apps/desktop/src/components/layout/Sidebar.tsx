@@ -69,23 +69,6 @@ export function Sidebar() {
           
           <div className="nav-section">
             <div className="nav-section-header">
-              <h3 className="nav-section-title">集合</h3>
-              <button className="nav-add-btn" title="新建集合">+</button>
-            </div>
-            <ul className="nav-list">
-              <li className="nav-item">
-                <span className="nav-icon">📁</span>
-                <span className="nav-label">工作</span>
-              </li>
-              <li className="nav-item">
-                <span className="nav-icon">📁</span>
-                <span className="nav-label">生活</span>
-              </li>
-            </ul>
-          </div>
-          
-          <div className="nav-section">
-            <div className="nav-section-header">
               <h3 className="nav-section-title">标签</h3>
               <button
                 className="nav-add-btn"

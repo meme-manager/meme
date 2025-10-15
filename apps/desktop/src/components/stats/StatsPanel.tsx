@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { convertFileSrc } from '@tauri-apps/api/core';
 import { useAssetStore } from '../../stores/assetStore';
 import { useTagStore } from '../../stores/tagStore';
 import { Dialog } from '../ui/Dialog';
+import type { Asset } from '../../types/asset';
 import './StatsPanel.css';
 
 interface StatsData {
@@ -9,7 +11,7 @@ interface StatsData {
   totalTags: number;
   totalSize: number; // bytes
   favoriteCount: number;
-  mostUsedAssets: Array<{ id: string; name: string; count: number }>;
+  mostUsedAssets: Array<{ asset: Asset; count: number }>;
   recentAssets: number; // 最近7天添加的
   avgUseCount: number;
 }
@@ -41,8 +43,7 @@ export function StatsPanel({ open, onClose }: StatsPanelProps) {
       .sort((a, b) => b.use_count - a.use_count)
       .slice(0, 5)
       .map(a => ({
-        id: a.id,
-        name: a.file_name,
+        asset: a,
         count: a.use_count,
       }));
     
@@ -118,13 +119,21 @@ export function StatsPanel({ open, onClose }: StatsPanelProps) {
             <div className="stats-section">
               <h3 className="stats-section-title">🔥 最常使用</h3>
               <div className="most-used-list">
-                {stats.mostUsedAssets.map((item, index) => (
-                  <div key={item.id} className="most-used-item">
-                    <span className="most-used-rank">#{index + 1}</span>
-                    <span className="most-used-name">{item.name}</span>
-                    <span className="most-used-count">{item.count} 次</span>
-                  </div>
-                ))}
+                {stats.mostUsedAssets.map((item, index) => {
+                  const imageSrc = convertFileSrc(item.asset.thumb_medium || item.asset.file_path);
+                  const isGif = item.asset.mime_type === 'image/gif';
+                  
+                  return (
+                    <div key={item.asset.id} className="most-used-item">
+                      <span className="most-used-rank">#{index + 1}</span>
+                      <div className="most-used-thumb">
+                        <img src={imageSrc} alt="" />
+                        {isGif && <span className="most-used-gif-badge">GIF</span>}
+                      </div>
+                      <span className="most-used-count">{item.count} 次</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
