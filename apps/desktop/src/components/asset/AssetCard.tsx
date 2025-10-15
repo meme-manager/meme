@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ask } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { convertFileSrc } from '@tauri-apps/api/core';
@@ -31,11 +31,44 @@ export function AssetCard({ asset, selected, matchInfo, onSelect, onOpenDetail, 
   const [justCopied, setJustCopied] = useState(false);
   const [assetTags, setAssetTags] = useState<Tag[]>([]);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
   const { incrementAssetUseCount, deleteAssetById, toggleFavorite, favoriteAssetIds } = useAssetStore();
   const { addToast } = useToastStore.getState();
-  const imageSrc = convertFileSrc(asset.thumb_medium || asset.file_path);
+  
+  // 判断是否是动图
+  const isAnimated = asset.mime_type === 'image/gif' || asset.mime_type === 'image/webp';
   const isGif = asset.mime_type === 'image/gif';
+  
+  // 动图在可见时使用原图，不可见或非动图使用缩略图
+  const imageSrc = (isAnimated && isVisible) 
+    ? convertFileSrc(asset.file_path) 
+    : convertFileSrc(asset.thumb_medium || asset.file_path);
+  
   const isFavorite = favoriteAssetIds.has(asset.id);
+  
+  // 使用 Intersection Observer 监听卡片可见性
+  useEffect(() => {
+    if (!cardRef.current || !isAnimated) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          setIsVisible(entry.isIntersecting);
+        });
+      },
+      {
+        rootMargin: '50px', // 提前 50px 开始加载
+        threshold: 0.1, // 10% 可见就算
+      }
+    );
+    
+    observer.observe(cardRef.current);
+    
+    return () => {
+      observer.disconnect();
+    };
+  }, [isAnimated]);
   
   // 监听空格键预览
   useEffect(() => {
@@ -187,6 +220,7 @@ export function AssetCard({ asset, selected, matchInfo, onSelect, onOpenDetail, 
   return (
     <>
       <div
+        ref={cardRef}
         className={`asset-card ${selected ? 'asset-card-selected' : ''} ${justCopied ? 'asset-card-copied' : ''}`}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
