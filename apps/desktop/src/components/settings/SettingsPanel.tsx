@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useThemeStore } from '../../stores/themeStore';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { useAssetStore } from '../../stores/assetStore';
 import { Dialog } from '../ui/Dialog';
 import { StatsPanel } from '../stats/StatsPanel';
+import { ExportDialog } from '../export/ExportDialog';
 import './SettingsPanel.css';
 
 interface SettingsPanelProps {
@@ -13,7 +15,9 @@ interface SettingsPanelProps {
 export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
   const { theme, toggleTheme } = useThemeStore();
   const { autoPlayGif, setAutoPlayGif } = useSettingsStore();
+  const { assets } = useAssetStore();
   const [showStats, setShowStats] = useState(false);
+  const [showExport, setShowExport] = useState(false);
 
   return (
     <>
@@ -77,6 +81,21 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
               </div>
               <span className="settings-link-arrow">›</span>
             </button>
+            
+            <button 
+              className="settings-link-btn"
+              onClick={() => {
+                onClose();
+                setShowExport(true);
+              }}
+            >
+              <span className="settings-link-icon">📤</span>
+              <div className="settings-link-info">
+                <div className="settings-link-label">导出全部</div>
+                <div className="settings-link-desc">导出所有图片到文件夹</div>
+              </div>
+              <span className="settings-link-arrow">›</span>
+            </button>
           </div>
         </div>
       </Dialog>
@@ -84,6 +103,13 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
       <StatsPanel
         open={showStats}
         onClose={() => setShowStats(false)}
+      />
+      
+      <ExportDialog
+        open={showExport}
+        assetIds={assets.map(a => a.id)}
+        assetPaths={assets.map(a => a.file_path)}
+        onClose={() => setShowExport(false)}
       />
     </>
   );
