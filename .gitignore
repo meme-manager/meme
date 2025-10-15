@@ -1,8 +1,82 @@
+# 依赖目录
+node_modules/
+**/node_modules/
+.pnp
+.pnp.js
 
-node_modules/*
-.husky/*
-apps/workers/node_modules/*
-packages/shared/node_modules/*
-apps/desktop/node_modules/*
-apps/desktop/src-tauri/target/release/*
-apps/desktop/src-tauri/target/debug/*
+# 构建输出
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+.turbo/
+
+# Rust 构建
+target/
+**/target/
+
+# 日志文件
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+.dev.vars
+*.env
+
+# 但保留示例文件
+!.env.example
+!**/.env.example
+
+# 编辑器配置
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 操作系统文件
+Thumbs.db
+Desktop.ini
+
+# Tauri
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/WixTools/
+
+# Wrangler
+.wrangler/
+.mf/
+wrangler.toml.bak
+
+# 测试覆盖率
+coverage/
+*.lcov
+.nyc_output/
+
+# 临时文件
+*.tmp
+*.temp
+.cache/
+
+# 锁文件 (保留 pnpm-lock.yaml)
+package-lock.json
+yarn.lock
+
+# Husky
+.husky/_/
+
+# 其他
+*.tsbuildinfo
+.eslintcache
