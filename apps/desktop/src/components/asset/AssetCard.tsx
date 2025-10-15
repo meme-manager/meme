@@ -51,19 +51,20 @@ export function AssetCard({ asset, selected, onSelect }: AssetCardProps) {
   };
 
   const handleClick = async (e: React.MouseEvent) => {
-    // 如果点击的是遮罩层，不触发卡片点击
-    // 按钮和 Popover 会自己阻止冒泡，所以这里不需要检查
-    if ((e.target as HTMLElement).closest('.asset-card-overlay')) {
-      return;
-    }
+    console.log('[AssetCard] handleClick 被调用');
+    console.log('[AssetCard] event.target:', e.target);
+    console.log('[AssetCard] isHovering:', isHovering);
     
     // Cmd/Ctrl + 点击：多选
     if (e.metaKey || e.ctrlKey) {
+      console.log('[AssetCard] Cmd/Ctrl + 点击，多选');
       onSelect?.();
       return;
     }
     
     // 普通点击：复制到剪贴板（仅在不悬浮时）
+    // 注意：悬浮时的按钮会自己阻止冒泡，所以这里不会被触发
+    console.log('[AssetCard] 检查是否复制，isHovering:', isHovering);
     if (!isHovering) {
       try {
         await invoke('copy_image_to_clipboard', {
