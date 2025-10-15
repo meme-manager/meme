@@ -16,8 +16,12 @@ export function TagSelector({ assetId, trigger, onTagsChange }: TagSelectorProps
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   
+  console.log('[TagSelector] 渲染，open:', open);
+  
   useEffect(() => {
+    console.log('[TagSelector] useEffect 触发，open:', open);
     if (open) {
+      console.log('[TagSelector] 加载标签数据');
       loadAssetTags();
       loadTags();
     }
@@ -96,7 +100,10 @@ export function TagSelector({ assetId, trigger, onTagsChange }: TagSelectorProps
       trigger={trigger}
       content={content}
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={(newOpen) => {
+        console.log('[TagSelector] onOpenChange 被调用，newOpen:', newOpen);
+        setOpen(newOpen);
+      }}
     />
   );
 }

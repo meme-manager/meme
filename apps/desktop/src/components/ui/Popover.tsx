@@ -29,14 +29,25 @@ export function Popover({ trigger, content, open: controlledOpen, onOpenChange }
   };
   
   const handleToggle = (e: React.MouseEvent) => {
+    console.log('[Popover] handleToggle 被调用');
+    console.log('[Popover] 当前 isOpen:', isOpen);
+    console.log('[Popover] controlledOpen:', controlledOpen);
+    
     e.stopPropagation(); // 阻止事件冒泡到卡片
     const newOpen = !isOpen;
+    
+    console.log('[Popover] 新状态 newOpen:', newOpen);
+    
     if (newOpen) {
+      console.log('[Popover] 更新位置');
       updatePosition();
     }
     if (controlledOpen === undefined) {
+      console.log('[Popover] 设置内部状态');
       setInternalOpen(newOpen);
     }
+    
+    console.log('[Popover] 调用 onOpenChange');
     onOpenChange?.(newOpen);
   };
   
