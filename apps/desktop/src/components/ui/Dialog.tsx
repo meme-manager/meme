@@ -1,4 +1,5 @@
 import { ReactNode, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import './Dialog.css';
 
 interface DialogProps {
@@ -33,7 +34,7 @@ export function Dialog({ open, onClose, title, children, footer }: DialogProps) 
   
   console.log('[Dialog] 渲染对话框内容');
   
-  return (
+  return createPortal(
     <div className="dialog-overlay" onClick={onClose}>
       <div className="dialog" onClick={(e) => e.stopPropagation()}>
         <div className="dialog-header">
@@ -53,6 +54,7 @@ export function Dialog({ open, onClose, title, children, footer }: DialogProps) 
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
