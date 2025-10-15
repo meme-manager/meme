@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTagStore } from '../../stores/tagStore';
 import { getAssetTags, addAssetTag, removeAssetTag } from '../../lib/database/operations';
 import { Popover } from '../ui/Popover';
+import { TagCreateDialog } from './TagCreateDialog';
 import './TagSelector.css';
 
 interface TagSelectorProps {
@@ -11,10 +12,11 @@ interface TagSelectorProps {
 }
 
 export function TagSelector({ assetId, trigger, onTagsChange }: TagSelectorProps) {
-  const { tags: allTags, loadTags } = useTagStore();
+  const { tags: allTags, loadTags, createNewTag } = useTagStore();
   const [assetTagIds, setAssetTagIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   
   console.log('[TagSelector] 渲染，open:', open);
   
@@ -93,7 +95,7 @@ export function TagSelector({ assetId, trigger, onTagsChange }: TagSelectorProps
           onClick={(e) => {
             e.stopPropagation();
             console.log('[TagSelector] 新建标签按钮被点击');
-            alert('新建标签功能待实现');
+            setShowCreateDialog(true);
           }}
         >
           + 新建标签
@@ -102,15 +104,35 @@ export function TagSelector({ assetId, trigger, onTagsChange }: TagSelectorProps
     </div>
   );
   
+  const handleCreateTag = async (name: string, color: string) => {
+    console.log('[TagSelector] 创建标签，name:', name, 'color:', color);
+    const newTag = await createNewTag(name, color);
+    if (newTag) {
+      console.log('[TagSelector] 标签创建成功，自动添加到资产');
+      // 自动将新创建的标签添加到当前资产
+      await addAssetTag(assetId, newTag.id);
+      await loadAssetTags();
+      onTagsChange?.();
+    }
+  };
+  
   return (
-    <Popover
-      trigger={trigger}
-      content={content}
-      open={open}
-      onOpenChange={(newOpen) => {
-        console.log('[TagSelector] onOpenChange 被调用，newOpen:', newOpen);
-        setOpen(newOpen);
-      }}
-    />
+    <>
+      <Popover
+        trigger={trigger}
+        content={content}
+        open={open}
+        onOpenChange={(newOpen) => {
+          console.log('[TagSelector] onOpenChange 被调用，newOpen:', newOpen);
+          setOpen(newOpen);
+        }}
+      />
+      
+      <TagCreateDialog
+        open={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+        onConfirm={handleCreateTag}
+      />
+    </>
   );
 }
