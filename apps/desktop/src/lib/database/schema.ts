@@ -3,7 +3,7 @@
  * 参考: ARCHITECTURE_simplified.md - 3.1 本地数据库
  */
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 3;
 
 /**
  * 创建所有表的SQL语句
@@ -43,9 +43,15 @@ CREATE TABLE IF NOT EXISTS assets (
     -- 使用统计
     use_count INTEGER DEFAULT 0,
     
+    -- 收藏状态
+    is_favorite INTEGER DEFAULT 0,
+    favorited_at INTEGER,
+    
     -- 云同步状态
     synced INTEGER DEFAULT 0,
     cloud_url TEXT,
+    r2_key TEXT,
+    thumb_r2_key TEXT,
     
     -- 软删除
     deleted INTEGER DEFAULT 0,
@@ -253,3 +259,22 @@ ${CREATE_INDEXES_SQL}
 ${CREATE_TRIGGERS_SQL}
 ${INIT_SYNC_STATE_SQL}
 `;
+
+/**
+ * 数据库迁移 SQL
+ */
+export const MIGRATIONS: Record<number, string> = {
+  // 版本 1 -> 2: 添加 r2_key 和 thumb_r2_key 列
+  2: `
+    -- 为 assets 表添加 r2_key 和 thumb_r2_key 列
+    ALTER TABLE assets ADD COLUMN r2_key TEXT;
+    ALTER TABLE assets ADD COLUMN thumb_r2_key TEXT;
+  `,
+  
+  // 版本 2 -> 3: 添加 is_favorite 和 favorited_at 列
+  3: `
+    -- 为 assets 表添加收藏相关列
+    ALTER TABLE assets ADD COLUMN is_favorite INTEGER DEFAULT 0;
+    ALTER TABLE assets ADD COLUMN favorited_at INTEGER;
+  `,
+};

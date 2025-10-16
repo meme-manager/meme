@@ -160,6 +160,60 @@ export async function incrementUseCount(id: string): Promise<void> {
   );
 }
 
+/**
+ * 获取自指定时间以来修改的资产（用于同步）
+ */
+export async function getAssetsModifiedSince(timestamp: number): Promise<Asset[]> {
+  const db = await getDatabase();
+  const assets = await db.select<Array<Asset>>(
+    'SELECT * FROM assets WHERE updated_at > ? ORDER BY updated_at ASC',
+    [timestamp]
+  );
+  
+  console.log(`[Database] 查询到 ${assets.length} 个修改的资产`);
+  
+  // 检查第一个资产的 undefined 字段
+  if (assets.length > 0) {
+    const firstAsset = assets[0];
+    const undefinedFields: string[] = [];
+    for (const [key, value] of Object.entries(firstAsset)) {
+      if (value === undefined) {
+        undefinedFields.push(key);
+      }
+    }
+    if (undefinedFields.length > 0) {
+      console.warn(`[Database] 查询结果有 undefined 字段:`, undefinedFields);
+      console.log(`[Database] 示例资产:`, firstAsset);
+    }
+  }
+  
+  // Tauri SQL 插件会将 SQLite 的 NULL 转换为 undefined
+  // 需要规范化为 null
+  return assets.map(asset => normalizeAsset(asset));
+}
+
+/**
+ * 规范化资产对象（将 undefined 转为 null）
+ */
+function normalizeAsset(asset: any): Asset {
+  const normalized: any = {};
+  for (const [key, value] of Object.entries(asset)) {
+    normalized[key] = value === undefined ? null : value;
+  }
+  return normalized as Asset;
+}
+
+/**
+ * 获取所有未同步的资产
+ */
+export async function getUnsyncedAssets(): Promise<Asset[]> {
+  const db = await getDatabase();
+  const assets = await db.select<Array<Asset>>(
+    'SELECT * FROM assets WHERE synced = 0 AND deleted = 0 ORDER BY created_at ASC'
+  );
+  return assets.map(asset => normalizeAsset(asset));
+}
+
 // ============================================================
 // 标签操作
 // ============================================================
@@ -235,6 +289,17 @@ export async function deleteTag(id: string): Promise<boolean> {
   const db = await getDatabase();
   await db.execute('DELETE FROM tags WHERE id = ?', [id]);
   return true;
+}
+
+/**
+ * 获取自指定时间以来修改的标签（用于同步）
+ */
+export async function getTagsModifiedSince(timestamp: number): Promise<Tag[]> {
+  const db = await getDatabase();
+  return await db.select<Array<Tag>>(
+    'SELECT * FROM tags WHERE updated_at > ? ORDER BY updated_at ASC',
+    [timestamp]
+  );
 }
 
 // ============================================================
@@ -453,5 +518,16 @@ export async function removeAssetFromCollection(assetId: string, collectionId: s
   await db.execute(
     'UPDATE collections SET asset_count = (SELECT COUNT(*) FROM asset_collections WHERE collection_id = ?) WHERE id = ?',
     [collectionId, collectionId]
+  );
+}
+
+/**
+ * 获取自指定时间以来的资产-标签关联（用于同步）
+ */
+export async function getAssetTagsModifiedSince(timestamp: number): Promise<Array<{ asset_id: string; tag_id: string; created_at: number }>> {
+  const db = await getDatabase();
+  return await db.select<Array<{ asset_id: string; tag_id: string; created_at: number }>>(
+    'SELECT asset_id, tag_id, created_at FROM asset_tags WHERE created_at > ? ORDER BY created_at ASC',
+    [timestamp]
   );
 }

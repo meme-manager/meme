@@ -149,10 +149,11 @@ export class ApiClient {
    */
   async deviceRegister(deviceInfo: DeviceInfo): Promise<AuthResponse> {
     console.log(`${LOG_PREFIX} 设备注册:`, deviceInfo.device_name);
-    return this.request<AuthResponse>('/auth/device-register', {
+    const response = await this.request<{ success: boolean; data: AuthResponse; message: string }>('/auth/device-register', {
       method: 'POST',
       body: JSON.stringify(deviceInfo),
     });
+    return response.data;
   }
 
   /**
@@ -169,21 +170,54 @@ export class ApiClient {
    */
   async syncPull(request: PullRequest): Promise<PullResponse> {
     console.log(`${LOG_PREFIX} 拉取更新,since: ${new Date(request.since).toISOString()}`);
-    return this.request<PullResponse>('/sync/pull', {
+    const response = await this.request<{ success: boolean; data: PullResponse }>('/sync/pull', {
       method: 'POST',
       body: JSON.stringify(request),
     });
+    return response.data;
   }
 
   /**
    * 推送本地更改
    */
   async syncPush(request: PushRequest): Promise<PushResponse> {
-    console.log(`${LOG_PREFIX} 推送更改,资产数: ${request.assets.length}`);
-    return this.request<PushResponse>('/sync/push', {
+    console.log(`${LOG_PREFIX} 推送更改,资产数: ${request.assets?.length || 0}`);
+    
+    // 🔍 检查资产中的 undefined 字段
+    if (request.assets && request.assets.length > 0) {
+      const firstAsset = request.assets[0];
+      console.log(`${LOG_PREFIX} 第一个资产示例:`, firstAsset);
+      
+      const undefinedFields: string[] = [];
+      for (const [key, value] of Object.entries(firstAsset)) {
+        if (value === undefined) {
+          undefinedFields.push(key);
+        }
+      }
+      
+      if (undefinedFields.length > 0) {
+        console.error(`${LOG_PREFIX} ⚠️ 发现 undefined 字段:`, undefinedFields);
+      }
+    }
+    
+    // 序列化并检查
+    const jsonString = JSON.stringify(request);
+    console.log(`${LOG_PREFIX} JSON 长度: ${jsonString.length} 字符`);
+    
+    // 检查 JSON 中是否包含 "undefined" 字符串
+    if (jsonString.includes('undefined')) {
+      console.error(`${LOG_PREFIX} ⚠️ JSON 中包含 undefined 字符串！`);
+      const match = jsonString.match(/.{0,50}undefined.{0,50}/);
+      if (match) {
+        console.error(`${LOG_PREFIX} 上下文:`, match[0]);
+      }
+    }
+    
+    const response = await this.request<{ success: boolean; data: PushResponse; message: string }>('/sync/push', {
       method: 'POST',
-      body: JSON.stringify(request),
+      body: jsonString,
     });
+    return response.data;
   }
 
   // ==================== 文件上传 API ====================
@@ -253,16 +287,17 @@ export class ApiClient {
     expires_at?: number;
   }> {
     console.log(`${LOG_PREFIX} 创建分享,资产数: ${request.asset_ids.length}`);
-    return this.request('/share/create', {
+    const response = await this.request<{ success: boolean; data: { share_id: string; share_url: string; expires_at?: number } }>('/share/create', {
       method: 'POST',
       body: JSON.stringify(request),
     });
+    return response.data;
   }
 
   /**
    * 获取分享详情
    */
-  async getShare(shareId: string): Promise<{
+  async getShare(shareId: string, password?: string): Promise<{
     title: string;
     description: string;
     assets: Array<{
@@ -278,7 +313,9 @@ export class ApiClient {
     view_count: number;
   }> {
     console.log(`${LOG_PREFIX} 获取分享: ${shareId}`);
-    return this.request(`/s/${shareId}`);
+    const url = password ? `/share/${shareId}?password=${encodeURIComponent(password)}` : `/share/${shareId}`;
+    const response = await this.request<{ success: boolean; data: any }>(url);
+    return response.data;
   }
 
   /**
@@ -296,7 +333,8 @@ export class ApiClient {
     }>;
   }> {
     console.log(`${LOG_PREFIX} 获取分享列表`);
-    return this.request('/share/list');
+    const response = await this.request<{ success: boolean; data: any }>('/share/list');
+    return response.data;
   }
 
   /**
@@ -304,9 +342,10 @@ export class ApiClient {
    */
   async deleteShare(shareId: string): Promise<{ success: boolean }> {
     console.log(`${LOG_PREFIX} 删除分享: ${shareId}`);
-    return this.request(`/share/${shareId}`, {
+    const response = await this.request<{ success: boolean; data: { success: boolean } }>(`/share/${shareId}`, {
       method: 'DELETE',
     });
+    return response.data;
   }
 
   /**
@@ -321,9 +360,10 @@ export class ApiClient {
     }>;
   }> {
     console.log(`${LOG_PREFIX} 导入分享: ${shareId}`);
-    return this.request(`/share/${shareId}/import`, {
+    const response = await this.request<{ success: boolean; data: any }>(`/share/${shareId}/import`, {
       method: 'POST',
     });
+    return response.data;
   }
 
   // ==================== 文件上传 API ====================
@@ -344,6 +384,14 @@ export class ApiClient {
     r2_url: string;
   }> {
     console.log(`${LOG_PREFIX} 上传文件: ${options.fileName}`);
+    console.log(`${LOG_PREFIX} 🔑 Token 状态: ${this.token ? `存在 (${this.token.substring(0, 20)}...)` : '❌ 不存在'}`);
+    console.log(`${LOG_PREFIX} 🌐 API URL: ${this.baseUrl}`);
+    console.log(`${LOG_PREFIX} 📋 请求头:`, {
+      'Authorization': this.token ? `Bearer ${this.token.substring(0, 20)}...` : '❌ 无',
+      'Content-Type': options.contentType,
+      'X-Content-Hash': options.contentHash,
+      'X-File-Name': options.fileName,
+    });
     
     const response = await fetch(`${this.baseUrl}/r2/upload`, {
       method: 'POST',
@@ -376,7 +424,8 @@ export class ApiClient {
     shares: { used: number; limit: number; percentage: number };
   }> {
     console.log(`${LOG_PREFIX} 获取配额信息`);
-    return this.request('/quota/info');
+    const response = await this.request<{ success: boolean; data: any }>('/quota/info');
+    return response.data;
   }
 }
 

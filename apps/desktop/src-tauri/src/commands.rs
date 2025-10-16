@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use std::collections::HashMap;
+use std::fs;
 use tauri::{AppHandle, Manager};
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, Digest};
@@ -473,4 +474,11 @@ pub async fn copy_image_to_clipboard(
             Ok("success".to_string())
         }
     }
+}
+
+/// 读取文件的二进制数据
+#[tauri::command]
+pub fn read_file_binary(file_path: String) -> Result<Vec<u8>, String> {
+    fs::read(&file_path)
+        .map_err(|e| format!("Failed to read file {}: {}", file_path, e))
 }

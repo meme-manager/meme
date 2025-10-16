@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSyncStore } from '../../stores/syncStore';
+import { apiClient } from '../../lib/api/client';
 
 export function CloudSyncSettingsInline() {
   const {
@@ -35,9 +36,16 @@ export function CloudSyncSettingsInline() {
     const init = async () => {
       initialize();
       
-      // 从 apiClient 获取当前 API 地址
-      const { apiClient } = await import('../../lib/api');
-      setApiUrl(apiClient.getBaseUrl());
+      // 从 localStorage 恢复保存的 API 地址
+      const savedApiUrl = localStorage.getItem('sync_api_url');
+      if (savedApiUrl) {
+        setApiUrl(savedApiUrl);
+        apiClient.setBaseUrl(savedApiUrl);
+        console.log('[CloudSyncInline] 恢复 API 地址:', savedApiUrl);
+      } else {
+        // 如果没有保存的地址，使用 apiClient 的当前地址
+        setApiUrl(apiClient.getBaseUrl());
+      }
       
       if (isAuthenticated) {
         loadQuota();
@@ -82,9 +90,11 @@ export function CloudSyncSettingsInline() {
 
     try {
       // 设置 API 地址
-      const { apiClient } = await import('../../lib/api');
       apiClient.setBaseUrl(apiUrl.trim());
       console.log('[CloudSync] 使用 API 地址:', apiUrl.trim());
+      
+      // 保存 API 地址到 localStorage（登录前保存，以便 login 函数能获取到）
+      localStorage.setItem('sync_api_url', apiUrl.trim());
       
       // 登录
       const deviceInfo = getDeviceInfo();
@@ -119,8 +129,11 @@ export function CloudSyncSettingsInline() {
     try {
       if (checked) {
         await enableSync();
+        // 清除之前的错误
+        setError(null);
       } else {
         await disableSync();
+        setError(null);
       }
     } catch (error) {
       console.error('切换同步失败:', error);

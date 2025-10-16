@@ -80,3 +80,4 @@ yarn.lock
 # 其他
 *.tsbuildinfo
 .eslintcache
+CLAUDE.md
