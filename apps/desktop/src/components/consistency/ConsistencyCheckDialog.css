@@ -1,0 +1,199 @@
+.consistency-check-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 8px;
+}
+
+.check-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.check-btn {
+  flex: 1;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.check-btn.primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.check-btn.primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.check-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.check-summary {
+  background: var(--background-secondary);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.consistency-stat-card {
+  text-align: center;
+}
+
+.consistency-stat-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.consistency-stat-value {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.health-status {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 12px;
+  background: var(--background-secondary);
+}
+
+.health-status.success {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.status-icon {
+  font-size: 32px;
+}
+
+.status-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.status-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.issues-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.issues-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.issue-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--background);
+}
+
+.issue-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.issue-header:hover {
+  background: var(--background-secondary);
+}
+
+.issue-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.issue-count {
+  font-size: 13px;
+  font-weight: normal;
+  color: var(--text-secondary);
+}
+
+.expand-icon {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.issue-content {
+  padding: 0 16px 16px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.issue-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 12px 0 16px 0;
+  line-height: 1.5;
+}
+
+.action-btn {
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #3b82f6;
+  color: white;
+}
+
+.action-btn:hover {
+  opacity: 0.9;
+}
+
+.action-btn.danger {
+  background: #ef4444;
+}
+
+.action-btn.danger:hover {
+  background: #dc2626;
+}
+
+/* 统计项样式 */
+.stat-item {
+  padding: 12px;
+  background: var(--background-secondary);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.stat-item-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.stat-item-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+}

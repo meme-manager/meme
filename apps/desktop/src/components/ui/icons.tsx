@@ -136,3 +136,30 @@ export const Link = createIcon([
   'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71',
   'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'
 ]);
+
+export const Shield = createIcon([
+  'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'
+]);
+
+export const AlertTriangle = createIcon([
+  'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z',
+  'M12 9v4',
+  'M12 17h.01'
+]);
+
+export const Upload = createIcon([
+  'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4',
+  'M17 8l-5-5-5 5',
+  'M12 3v12'
+]);
+
+export const Edit3 = createIcon([
+  'M12 20h9',
+  'M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'
+]);
+
+export const Save = createIcon([
+  'M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z',
+  'M17 21v-8H7v8',
+  'M7 3v5h8'
+]);

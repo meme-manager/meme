@@ -8,9 +8,6 @@ import { apiClient } from '../api/client';
 import type { Asset, Tag } from '../../types/asset';
 import type { PullResponse, PushRequest, SyncResult } from '../../types/sync';
 import { 
-  getAssetsModifiedSince, 
-  getTagsModifiedSince, 
-  getAssetTagsModifiedSince,
   getAssetById,
   createAsset,
   updateAsset,
@@ -18,6 +15,8 @@ import {
   addAssetTag
 } from '../database/operations';
 import { getDatabase } from '../database';
+import { dataConsistencyManager } from '../consistency';
+import type { ConsistencyReport } from '../consistency/types';
 
 const LOG_PREFIX = '[Sync Manager]';
 
@@ -95,8 +94,8 @@ export class SyncManager {
       let pulledCount = 0;
       let pushedCount = 0;
 
-      // 1. 拉取云端更新
-      console.log(`${LOG_PREFIX} 步骤 1: 拉取云端更新`);
+      // 1. 拉取云端增量更新（基于时间）
+      console.log(`${LOG_PREFIX} 步骤 1: 拉取云端增量更新`);
       const pullResult = await this.pullFromCloud();
       pulledCount = pullResult.total_count;
       
@@ -104,28 +103,52 @@ export class SyncManager {
       console.log(`${LOG_PREFIX} 步骤 2: 合并云端数据`);
       await this.mergeCloudData(pullResult);
 
-      // 3. 收集本地更改
-      console.log(`${LOG_PREFIX} 步骤 3: 收集本地更改`);
-      let localChanges = await this.collectLocalChanges();
+      // 3. 获取云端所有资产（用于对比）
+      console.log(`${LOG_PREFIX} 步骤 3: 获取云端所有资产用于对比`);
+      const cloudData = await this.getCloudData();
 
-      // 4. 上传新增的图片
-      if (localChanges.assets && localChanges.assets.length > 0) {
-        console.log(`${LOG_PREFIX} 步骤 4: 上传图片 (${localChanges.assets.length} 张)`);
-        await this.uploadNewAssets(localChanges.assets);
+      // 4. 对比本地和云端，收集需要推送的更改
+      console.log(`${LOG_PREFIX} 步骤 4: 对比本地和云端数据`);
+      let changesToPush = await this.collectChangesToPush(cloudData);
+
+      // 5. 上传新增的图片
+      if (changesToPush.assets && changesToPush.assets.length > 0) {
+        console.log(`${LOG_PREFIX} 步骤 5: 上传图片 (${changesToPush.assets.length} 张)`);
+        await this.uploadNewAssets(changesToPush.assets);
         
         // 上传后重新收集本地更改，确保 r2_key 等字段是最新的
-        console.log(`${LOG_PREFIX} 步骤 4.5: 重新收集本地更改（上传后）`);
-        localChanges = await this.collectLocalChanges();
+        console.log(`${LOG_PREFIX} 步骤 5.5: 重新收集需要推送的数据（上传后）`);
+        changesToPush = await this.collectChangesToPush(cloudData);
       }
 
-      // 5. 推送本地更改到云端
-      console.log(`${LOG_PREFIX} 步骤 5: 推送本地更改`);
-      const pushResult = await this.pushToCloud(localChanges);
+      // 6. 推送本地更改到云端
+      console.log(`${LOG_PREFIX} 步骤 6: 推送本地更改`);
+      const pushResult = await this.pushToCloud(changesToPush);
       pushedCount = pushResult.synced_count;
 
-      // 6. 更新同步时间
+      // 7. 更新同步时间
       const serverTimestamp = pushResult.server_timestamp;
       await this.updateLastSyncTime(serverTimestamp);
+
+      // 8. 数据一致性检查（定期执行）
+      if (this.shouldRunConsistencyCheck()) {
+        console.log(`${LOG_PREFIX} 步骤 8: 执行数据一致性检查...`);
+        try {
+          const consistencyReport = await dataConsistencyManager.ensureConsistency({
+            downloadMissing: true,
+            autoRepair: false,  // 不自动修复，让用户决定
+            cleanupDeleted: true
+          });
+          
+          // 如果有问题，保存报告
+          if (consistencyReport.summary.pendingIssues > 0) {
+            await this.saveConsistencyReport(consistencyReport);
+            console.log(`${LOG_PREFIX} ⚠️ 发现 ${consistencyReport.summary.pendingIssues} 个待处理问题`);
+          }
+        } catch (error) {
+          console.error(`${LOG_PREFIX} 一致性检查失败:`, error);
+        }
+      }
 
       const duration = Date.now() - startTime;
       console.log(`${LOG_PREFIX} 同步完成,耗时: ${duration}ms`);
@@ -167,7 +190,6 @@ export class SyncManager {
    */
   private async mergeCloudData(cloudData: PullResponse): Promise<void> {
     const { assets, tags, asset_tags, settings } = cloudData;
-    const lastSyncTime = this.config!.lastSyncTime || 0;
 
     console.log(`${LOG_PREFIX} 合并数据: ${assets.length} 资产, ${tags.length} 标签, ${settings.length} 设置`);
 
@@ -176,12 +198,12 @@ export class SyncManager {
     
     // 合并资产
     for (const cloudAsset of assets) {
-      await this.mergeAsset(cloudAsset, lastSyncTime);
+      await this.mergeAsset(cloudAsset);
     }
 
     // 合并标签
     for (const cloudTag of tags) {
-      await this.mergeTag(cloudTag, lastSyncTime);
+      await this.mergeTag(cloudTag);
     }
 
     // 合并关联关系
@@ -198,7 +220,7 @@ export class SyncManager {
   /**
    * 合并单个资产 (LWW - Last Write Wins)
    */
-  private async mergeAsset(cloudAsset: Asset, lastSyncTime: number): Promise<void> {
+  private async mergeAsset(cloudAsset: Asset): Promise<void> {
     try {
       const localAsset = await getAssetById(cloudAsset.id);
       
@@ -263,7 +285,7 @@ export class SyncManager {
   /**
    * 合并单个标签 (LWW)
    */
-  private async mergeTag(cloudTag: Tag, lastSyncTime: number): Promise<void> {
+  private async mergeTag(cloudTag: Tag): Promise<void> {
     try {
       // 查找本地是否存在该标签
       const allTags = await listTags();
@@ -355,33 +377,109 @@ export class SyncManager {
   }
 
   /**
-   * 收集本地更改
+   * 获取云端所有数据（用于对比）
    */
-  private async collectLocalChanges(): Promise<PushRequest> {
-    const lastSyncTime = this.config!.lastSyncTime || 0;
+  private async getCloudData(): Promise<{ assets: Map<string, any>; tags: Map<string, any> }> {
+    console.log(`${LOG_PREFIX} 获取云端所有数据...`);
+    
+    try {
+      const cloudAssets = await apiClient.getCloudAssets();
+      console.log(`${LOG_PREFIX} 云端共有 ${cloudAssets.summary.total} 个资产`);
+      
+      // 将数组转换为 Map，方便查找和对比
+      const assetsMap = new Map<string, any>();
+      for (const asset of cloudAssets.assets) {
+        assetsMap.set(asset.id, asset);
+      }
+      
+      // TODO: 获取云端标签数据
+      const tagsMap = new Map<string, any>();
+      
+      return { assets: assetsMap, tags: tagsMap };
+    } catch (error) {
+      console.error(`${LOG_PREFIX} 获取云端数据失败:`, error);
+      return { assets: new Map(), tags: new Map() };
+    }
+  }
 
-    console.log(`${LOG_PREFIX} 收集本地更改,since: ${new Date(lastSyncTime).toISOString()}`);
+  /**
+   * 对比本地和云端，收集需要推送的更改
+   * 策略：
+   * 1. 本地有但云端没有 -> 推送
+   * 2. 本地和云端都有但本地更新 -> 推送
+   * 3. 云端有但本地没有 -> 不推送（已在 Pull 阶段处理）
+   */
+  private async collectChangesToPush(cloudData: { assets: Map<string, any>; tags: Map<string, any> }): Promise<PushRequest> {
+    console.log(`${LOG_PREFIX} 对比本地和云端数据...`);
 
     try {
-      // 查询本地数据库获取修改的数据
-      const assets = await getAssetsModifiedSince(lastSyncTime);
-      const tags = await getTagsModifiedSince(lastSyncTime);
-      const asset_tags = await getAssetTagsModifiedSince(lastSyncTime);
+      // 获取本地所有资产（未删除的）
+      const db = await getDatabase();
+      const localAssets = await db.select<Array<Asset>>(
+        'SELECT * FROM assets WHERE deleted = 0 ORDER BY created_at ASC'
+      );
+      
+      console.log(`${LOG_PREFIX} 本地共有 ${localAssets.length} 个资产`);
+      console.log(`${LOG_PREFIX} 云端共有 ${cloudData.assets.size} 个资产`);
+      
+      // 需要推送的资产
+      const assetsToPush: Asset[] = [];
+      
+      for (const localAsset of localAssets) {
+        // 检查是否已上传到 R2（r2_key 必须有值）
+        if (!localAsset.r2_key) {
+          console.log(`${LOG_PREFIX} ⏭️  跳过未上传到 R2 的资产: ${localAsset.file_name}`);
+          continue;
+        }
+        
+        const cloudAsset = cloudData.assets.get(localAsset.id);
+        
+        if (!cloudAsset) {
+          // 云端没有，需要推送
+          console.log(`${LOG_PREFIX} 📤 需要推送（云端无）: ${localAsset.file_name}`);
+          assetsToPush.push(localAsset);
+        } else if (localAsset.updated_at > cloudAsset.updated_at) {
+          // 本地更新，需要推送
+          console.log(`${LOG_PREFIX} 📤 需要推送（本地更新）: ${localAsset.file_name}`);
+          assetsToPush.push(localAsset);
+        }
+      }
+      
+      // 获取本地所有标签
+      const localTags = await listTags();
+      const tagsToPush: Tag[] = [];
+      
+      for (const localTag of localTags) {
+        const cloudTag = cloudData.tags.get(localTag.id);
+        
+        if (!cloudTag) {
+          console.log(`${LOG_PREFIX} 📤 需要推送标签（云端无）: ${localTag.name}`);
+          tagsToPush.push(localTag);
+        } else if (localTag.updated_at > cloudTag.updated_at) {
+          console.log(`${LOG_PREFIX} 📤 需要推送标签（本地更新）: ${localTag.name}`);
+          tagsToPush.push(localTag);
+        }
+      }
+      
+      // 获取所有关联关系（暂时推送所有）
+      const asset_tags = await db.select<Array<{ asset_id: string; tag_id: string; created_at: number }>>(
+        'SELECT asset_id, tag_id, created_at FROM asset_tags ORDER BY created_at ASC'
+      );
       
       // TODO: 设置同步需要实现用户设置的存储和查询
       const settings: Array<{ user_id: string; key: string; value: string; updated_at: number }> = [];
 
-      console.log(`${LOG_PREFIX} 收集到: ${assets.length} 个资产, ${tags.length} 个标签, ${asset_tags.length} 个关联`);
+      console.log(`${LOG_PREFIX} 需要推送: ${assetsToPush.length} 个资产, ${tagsToPush.length} 个标签, ${asset_tags.length} 个关联`);
 
       // 转换为 API 需要的格式
       return {
-        assets: assets.length > 0 ? this.convertAssetsForSync(assets) : undefined,
-        tags: tags.length > 0 ? tags : undefined,
+        assets: assetsToPush.length > 0 ? this.convertAssetsForSync(assetsToPush) : undefined,
+        tags: tagsToPush.length > 0 ? tagsToPush : undefined,
         asset_tags: asset_tags.length > 0 ? asset_tags : undefined,
         settings: settings.length > 0 ? settings : undefined,
       };
     } catch (error) {
-      console.error(`${LOG_PREFIX} 收集本地更改失败:`, error);
+      console.error(`${LOG_PREFIX} 收集需推送数据失败:`, error);
       return {
         assets: undefined,
         tags: undefined,
@@ -534,6 +632,43 @@ export class SyncManager {
    */
   getLastSyncTime(): number {
     return this.config?.lastSyncTime || 0;
+  }
+
+  /**
+   * 判断是否应该运行一致性检查
+   * 策略：每10次同步运行一次
+   */
+  private shouldRunConsistencyCheck(): boolean {
+    try {
+      const checkCountStr = localStorage.getItem('consistency_check_count') || '0';
+      const checkCount = parseInt(checkCountStr);
+      
+      // 每10次同步运行一次
+      if (checkCount >= 10) {
+        localStorage.setItem('consistency_check_count', '0');
+        return true;
+      } else {
+        localStorage.setItem('consistency_check_count', String(checkCount + 1));
+        return false;
+      }
+    } catch (error) {
+      console.error(`${LOG_PREFIX} 检查一致性计数失败:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 保存一致性检查报告
+   */
+  private async saveConsistencyReport(report: ConsistencyReport): Promise<void> {
+    try {
+      const reportKey = `consistency_report_${report.timestamp}`;
+      localStorage.setItem(reportKey, JSON.stringify(report));
+      localStorage.setItem('consistency_latest_report', JSON.stringify(report));
+      console.log(`${LOG_PREFIX} 一致性报告已保存: ${reportKey}`);
+    } catch (error) {
+      console.error(`${LOG_PREFIX} 保存一致性报告失败:`, error);
+    }
   }
 
   /**

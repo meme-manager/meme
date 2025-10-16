@@ -15,6 +15,7 @@ pub fn run() {
             commands::delete_asset_files,
             commands::export_assets,
             commands::read_file_binary,
+            commands::file_exists,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

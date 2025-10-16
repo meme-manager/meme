@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use std::fs;
 use tauri::{AppHandle, Manager};
@@ -481,4 +481,10 @@ pub async fn copy_image_to_clipboard(
 pub fn read_file_binary(file_path: String) -> Result<Vec<u8>, String> {
     fs::read(&file_path)
         .map_err(|e| format!("Failed to read file {}: {}", file_path, e))
+}
+
+/// 检查文件是否存在
+#[tauri::command]
+pub fn file_exists(file_path: String) -> bool {
+    Path::new(&file_path).exists()
 }

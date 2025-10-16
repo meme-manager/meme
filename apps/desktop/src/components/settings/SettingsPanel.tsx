@@ -6,6 +6,7 @@ import { Dialog } from '../ui/Dialog';
 import { StatsPanel } from '../stats/StatsPanel';
 import { ExportDialog } from '../export/ExportDialog';
 import { CloudSyncSettingsInline } from './CloudSyncSettingsInline';
+import { ConsistencyCheckDialog } from '../consistency/ConsistencyCheckDialog';
 import './SettingsPanel.css';
 
 interface SettingsPanelProps {
@@ -19,6 +20,7 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
   const { assets } = useAssetStore();
   const [showStats, setShowStats] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showConsistencyCheck, setShowConsistencyCheck] = useState(false);
 
   return (
     <>
@@ -78,6 +80,21 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
               className="settings-link-btn"
               onClick={() => {
                 onClose();
+                setShowConsistencyCheck(true);
+              }}
+            >
+              <span className="settings-link-icon">🛡️</span>
+              <div className="settings-link-info">
+                <div className="settings-link-label">数据一致性检查</div>
+                <div className="settings-link-desc">检查和修复数据问题</div>
+              </div>
+              <span className="settings-link-arrow">›</span>
+            </button>
+            
+            <button 
+              className="settings-link-btn"
+              onClick={() => {
+                onClose();
                 setShowStats(true);
               }}
             >
@@ -107,6 +124,11 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
         </div>
       </Dialog>
 
+      <ConsistencyCheckDialog
+        open={showConsistencyCheck}
+        onClose={() => setShowConsistencyCheck(false)}
+      />
+      
       <StatsPanel
         open={showStats}
         onClose={() => setShowStats(false)}

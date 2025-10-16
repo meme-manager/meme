@@ -116,11 +116,27 @@ export function CloudSyncSettingsInline() {
 
   // 同步处理
   const handleSync = async () => {
+    console.log('[CloudSyncInline] === 开始手动同步 ===');
+    console.log('[CloudSyncInline] 当前状态:', {
+      enabled,
+      isAuthenticated,
+      userId,
+      syncing
+    });
+    
     try {
-      await performSync();
+      const result = await performSync();
+      console.log('[CloudSyncInline] 同步结果:', result);
+      
+      if (result.success) {
+        console.log(`[CloudSyncInline] ✅ 同步成功: 拉取 ${result.pulledCount} 条, 推送 ${result.pushedCount} 条`);
+      } else {
+        console.error('[CloudSyncInline] ❌ 同步失败:', result.error);
+      }
+      
       await loadQuota();
     } catch (error) {
-      console.error('同步失败:', error);
+      console.error('[CloudSyncInline] 同步异常:', error);
     }
   };
 

@@ -16,6 +16,7 @@ export { Alert, AlertDescription } from './alert';
 export { Progress } from './progress';
 export { Textarea } from './textarea';
 export { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SimpleSelect } from './select';
+export { Badge } from './badge';
 
 // 图标
 export * from './icons';

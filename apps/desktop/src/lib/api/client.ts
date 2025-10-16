@@ -427,6 +427,156 @@ export class ApiClient {
     const response = await this.request<{ success: boolean; data: any }>('/quota/info');
     return response.data;
   }
+
+  // ==================== 数据一致性相关 API ====================
+
+  /**
+   * 检查 R2 文件是否存在（单个）
+   * @deprecated 使用 batchCheckFiles 代替
+   */
+  async checkFileExists(r2Key: string): Promise<{
+    exists: boolean;
+    size?: number;
+    uploaded?: Date;
+  }> {
+    console.log(`${LOG_PREFIX} 检查文件: ${r2Key}`);
+    const response = await this.request<{ success: boolean; data: any }>('/r2/check', {
+      method: 'POST',
+      body: JSON.stringify({ r2_key: r2Key })
+    });
+    return response.data;
+  }
+
+  /**
+   * 批量检查 R2 文件是否存在
+   */
+  async batchCheckFiles(r2Keys: string[]): Promise<{
+    results: Array<{
+      r2_key: string;
+      exists: boolean;
+      size?: number;
+      uploaded?: Date;
+      error?: string;
+    }>;
+    summary: {
+      total: number;
+      exists: number;
+      missing: number;
+    };
+  }> {
+    console.log(`${LOG_PREFIX} 批量检查文件: ${r2Keys.length} 个`);
+    const response = await this.request<{ success: boolean; data: any }>('/r2/batch-check', {
+      method: 'POST',
+      body: JSON.stringify({ r2_keys: r2Keys })
+    });
+    return response.data;
+  }
+
+  /**
+   * 检查 R2 孤儿文件
+   */
+  async checkOrphanFiles(): Promise<{
+    orphans: Array<{ r2_key: string; size: number; uploaded: Date }>;
+    summary: {
+      total_r2_files: number;
+      total_d1_keys: number;
+      orphan_count: number;
+      orphan_size_bytes: number;
+    };
+  }> {
+    console.log(`${LOG_PREFIX} 检查孤儿文件`);
+    const response = await this.request<{ success: boolean; data: any }>('/consistency/check-orphans', {
+      method: 'POST'
+    });
+    return response.data;
+  }
+
+  /**
+   * 检查 D1 文件完整性
+   */
+  async checkD1FileIntegrity(): Promise<{
+    missing: Array<{ 
+      asset_id: string; 
+      r2_key?: string; 
+      thumb_r2_key?: string;
+    }>;
+    summary: {
+      total_assets: number;
+      total_keys: number;
+      missing_count: number;
+      affected_assets: number;
+    };
+  }> {
+    console.log(`${LOG_PREFIX} 检查 D1 文件完整性`);
+    const response = await this.request<{ success: boolean; data: any }>('/consistency/check-d1-files', {
+      method: 'POST'
+    });
+    return response.data;
+  }
+
+  /**
+   * 获取云端所有资产
+   */
+  async getCloudAssets(): Promise<{
+    assets: any[];
+    summary: {
+      total: number;
+      deleted: number;
+      with_r2: number;
+    };
+  }> {
+    console.log(`${LOG_PREFIX} 获取云端资产`);
+    const response = await this.request<{ success: boolean; data: any }>('/consistency/get-cloud-assets', {
+      method: 'POST'
+    });
+    return response.data;
+  }
+
+  /**
+   * 从 R2 下载文件
+   */
+  async downloadFile(r2Key: string): Promise<ArrayBuffer> {
+    console.log(`${LOG_PREFIX} 下载文件: ${r2Key}`);
+    
+    const url = `${this.baseUrl}/r2/download/${encodeURIComponent(r2Key)}`;
+    const headers: Record<string, string> = {};
+    
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: '下载失败' }));
+      throw new Error(error.error || '下载失败');
+    }
+
+    return response.arrayBuffer();
+  }
+
+  /**
+   * 删除 R2 文件
+   */
+  async deleteR2File(r2Key: string): Promise<{ deleted: boolean }> {
+    console.log(`${LOG_PREFIX} 删除文件: ${r2Key}`);
+    const response = await this.request<{ success: boolean; data: any }>(`/r2/delete/${encodeURIComponent(r2Key)}`, {
+      method: 'DELETE'
+    });
+    return response.data;
+  }
+
+  /**
+   * 调试：查看 D1 中的资产数据
+   */
+  async debugGetD1Assets(): Promise<{ total: number; assets: any[] }> {
+    console.log(`${LOG_PREFIX} 调试：查看 D1 资产`);
+    const response = await this.request<{ success: boolean; data: any }>('/sync/debug-assets');
+    return response.data;
+  }
 }
 
 // 导出单例实例
