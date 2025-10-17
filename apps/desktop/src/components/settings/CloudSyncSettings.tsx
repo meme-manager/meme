@@ -38,7 +38,8 @@ export function CloudSyncSettings() {
     lastSyncSuccess,
     error,
     isAuthenticated,
-    userId,
+    deviceId,
+    serverConfig,
     quota,
     initialize,
     login,
@@ -51,6 +52,7 @@ export function CloudSyncSettings() {
   } = useSyncStore();
 
   const [deviceName, setDeviceName] = useState('');
+  const [syncPassword, setSyncPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // 初始化
@@ -77,6 +79,7 @@ export function CloudSyncSettings() {
       device_name: deviceName || `${deviceType} 设备`,
       device_type: 'desktop' as const,
       platform: deviceType,
+      sync_password: syncPassword || undefined,
     };
   };
 
@@ -176,7 +179,7 @@ export function CloudSyncSettings() {
               登录云同步
             </CardTitle>
             <CardDescription>
-              首次使用需要注册设备,数据将加密存储在 Cloudflare
+              需要同步密码才能连接服务器。请先使用管理员面板设置同步密码。
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -193,9 +196,30 @@ export function CloudSyncSettings() {
                 用于在多设备管理中识别此设备
               </p>
             </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="sync-password">
+                同步密码 <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="sync-password"
+                type="password"
+                placeholder="输入管理员设置的同步密码"
+                value={syncPassword}
+                onChange={(e) => setSyncPassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+              />
+              <p className="text-xs text-muted-foreground">
+                💡 如何获取同步密码：<br />
+                1. 打开"管理员面板"（设置 → 管理员面板）<br />
+                2. 使用管理员密码登录<br />
+                3. 在"安全"标签页设置同步密码
+              </p>
+            </div>
+            
             <Button 
               onClick={handleLogin} 
-              disabled={isLoggingIn || !deviceName.trim()}
+              disabled={isLoggingIn || !deviceName.trim() || !syncPassword.trim()}
               className="w-full"
             >
               {isLoggingIn ? (
@@ -236,7 +260,12 @@ export function CloudSyncSettings() {
                 />
               </CardTitle>
               <CardDescription>
-                用户 ID: {userId?.slice(0, 8)}...
+                设备 ID: {deviceId?.slice(0, 8)}...
+                {serverConfig && (
+                  <span className="block mt-1">
+                    服务器: {serverConfig.server_name}
+                  </span>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -295,7 +324,7 @@ export function CloudSyncSettings() {
                   配额使用情况
                 </CardTitle>
                 <CardDescription>
-                  免费版配额,完全够个人使用
+                  全局配额（所有设备共享）
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -360,7 +389,7 @@ export function CloudSyncSettings() {
               <p>• 数据存储在 Cloudflare 全球边缘网络,安全可靠</p>
               <p>• 采用增量同步,只传输变更的数据,节省流量</p>
               <p>• 冲突采用"最后写入获胜"策略,时间戳新的覆盖旧的</p>
-              <p>• 免费版配额: 10000张图片 / 1GB存储 / 100个分享</p>
+              <p>• 全局配额: 10000张图片 / 5GB存储 / 500个分享</p>
               <p>• 本地数据始终保留,云同步只是备份和同步功能</p>
             </CardContent>
           </Card>

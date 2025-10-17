@@ -25,18 +25,18 @@ export interface PullRequest {
   since: number;                      // 上次同步时间戳（毫秒）
 }
 
-export interface UserSetting {
-  user_id: string;
+export interface Setting {
   key: string;
   value: string;
   updated_at: number;
+  description?: string;
 }
 
 export interface PullResponse {
   assets: Asset[];
   tags: Tag[];
   asset_tags: Array<{ asset_id: string; tag_id: string; created_at: number }>;
-  settings: UserSetting[];
+  settings: Setting[];
   server_timestamp: number;
   total_count: number;
 }
@@ -45,7 +45,7 @@ export interface PushRequest {
   assets?: Asset[];
   tags?: Tag[];
   asset_tags?: Array<{ asset_id: string; tag_id: string; created_at: number }>;
-  settings?: UserSetting[];
+  settings?: Setting[];
 }
 
 export interface PushResponse {
@@ -59,11 +59,15 @@ export interface DeviceInfo {
   device_name: string;
   device_type: 'desktop';
   platform: 'macos' | 'windows' | 'linux';
+  sync_password?: string;  // 可选的同步密码
 }
 
 export interface AuthResponse {
   token: string;
-  user_id: string;
   device_id: string;
   expires_at: number;
+  server_config: {
+    server_name: string;
+    require_sync_password: boolean;
+  };
 }

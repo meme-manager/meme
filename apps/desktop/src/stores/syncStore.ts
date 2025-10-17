@@ -19,9 +19,12 @@ interface SyncState {
   
   // 认证信息
   isAuthenticated: boolean;
-  userId: string | null;
   deviceId: string | null;
   token: string | null;
+  serverConfig: {
+    server_name: string;
+    require_sync_password: boolean;
+  } | null;
   
   // 配额信息
   quota: {
@@ -48,7 +51,6 @@ const loadSyncConfig = () => {
   try {
     const enabled = localStorage.getItem('sync_enabled') === 'true';
     const lastSyncTime = localStorage.getItem('sync_last_time');
-    const userId = localStorage.getItem('sync_user_id');
     const deviceId = localStorage.getItem('sync_device_id');
     const token = localStorage.getItem('sync_token');
     const apiUrl = localStorage.getItem('sync_api_url');
@@ -56,18 +58,16 @@ const loadSyncConfig = () => {
     return {
       enabled,
       lastSyncTime: lastSyncTime ? parseInt(lastSyncTime) : null,
-      userId,
       deviceId,
       token,
       apiUrl,
-      isAuthenticated: !!(userId && token),
+      isAuthenticated: !!(deviceId && token),
     };
   } catch (error) {
     console.error(`${LOG_PREFIX} 加载配置失败:`, error);
     return {
       enabled: false,
       lastSyncTime: null,
-      userId: null,
       deviceId: null,
       token: null,
       apiUrl: null,
@@ -82,7 +82,6 @@ const loadSyncConfig = () => {
 const saveSyncConfig = (config: {
   enabled?: boolean;
   lastSyncTime?: number;
-  userId?: string;
   deviceId?: string;
   token?: string;
   apiUrl?: string;
@@ -93,9 +92,6 @@ const saveSyncConfig = (config: {
     }
     if (config.lastSyncTime !== undefined) {
       localStorage.setItem('sync_last_time', String(config.lastSyncTime));
-    }
-    if (config.userId !== undefined) {
-      localStorage.setItem('sync_user_id', config.userId);
     }
     if (config.deviceId !== undefined) {
       localStorage.setItem('sync_device_id', config.deviceId);
@@ -118,10 +114,11 @@ const clearSyncConfig = () => {
   try {
     localStorage.removeItem('sync_enabled');
     localStorage.removeItem('sync_last_time');
-    localStorage.removeItem('sync_user_id');
     localStorage.removeItem('sync_device_id');
     localStorage.removeItem('sync_token');
     localStorage.removeItem('sync_api_url');
+    // 为了兼容旧版本，也移除旧的 user_id
+    localStorage.removeItem('sync_user_id');
   } catch (error) {
     console.error(`${LOG_PREFIX} 清除配置失败:`, error);
   }
@@ -142,9 +139,9 @@ export const useSyncStore = create<SyncState>((set, get) => {
     error: null,
     
     isAuthenticated: initialConfig.isAuthenticated,
-    userId: initialConfig.userId,
     deviceId: initialConfig.deviceId,
     token: initialConfig.token,
+    serverConfig: null,
     
     quota: null,
     
@@ -155,7 +152,7 @@ export const useSyncStore = create<SyncState>((set, get) => {
       console.log(`${LOG_PREFIX} 初始化`);
       const state = get();
       
-      if (state.isAuthenticated && state.userId && state.deviceId && state.token) {
+      if (state.isAuthenticated && state.deviceId && state.token) {
         try {
           // 确保使用 localStorage 中的 enabled 状态
           const savedEnabled = localStorage.getItem('sync_enabled') === 'true';
@@ -171,7 +168,6 @@ export const useSyncStore = create<SyncState>((set, get) => {
             enabled: savedEnabled,
             lastSyncTime: state.lastSyncTime || 0,
             deviceId: state.deviceId,
-            userId: state.userId,
             token: state.token,
           });
           
@@ -203,7 +199,6 @@ export const useSyncStore = create<SyncState>((set, get) => {
         
         // 保存认证信息和 API URL
         saveSyncConfig({
-          userId: response.user_id,
           deviceId: deviceInfo.device_id,
           token: response.token,
           apiUrl: currentApiUrl,
@@ -214,9 +209,9 @@ export const useSyncStore = create<SyncState>((set, get) => {
         // 更新状态
         set({
           isAuthenticated: true,
-          userId: response.user_id,
           deviceId: deviceInfo.device_id,
           token: response.token,
+          serverConfig: response.server_config,
         });
         
         // 登录后默认启用同步
@@ -228,14 +223,13 @@ export const useSyncStore = create<SyncState>((set, get) => {
           enabled: enabledAfterLogin,
           lastSyncTime: get().lastSyncTime || 0,
           deviceId: deviceInfo.device_id,
-          userId: response.user_id,
           token: response.token,
         });
         
         // 更新启用状态
         set({ enabled: enabledAfterLogin });
         
-        console.log(`${LOG_PREFIX} 登录成功,用户: ${response.user_id}`);
+        console.log(`${LOG_PREFIX} 登录成功,设备: ${deviceInfo.device_id}`);
       } catch (error) {
         console.error(`${LOG_PREFIX} 登录失败:`, error);
         const errorMessage = error instanceof Error ? error.message : '登录失败';
@@ -260,9 +254,9 @@ export const useSyncStore = create<SyncState>((set, get) => {
       set({
         enabled: false,
         isAuthenticated: false,
-        userId: null,
         deviceId: null,
         token: null,
+        serverConfig: null,
         lastSyncTime: null,
         quota: null,
         error: null,
@@ -282,12 +276,11 @@ export const useSyncStore = create<SyncState>((set, get) => {
       
       // 更新 syncManager 的配置
       const state = get();
-      if (state.userId && state.deviceId && state.token) {
+      if (state.deviceId && state.token) {
         await syncManager.initialize({
           enabled: true,
           lastSyncTime: state.lastSyncTime || 0,
           deviceId: state.deviceId,
-          userId: state.userId,
           token: state.token,
         });
       }
@@ -304,12 +297,11 @@ export const useSyncStore = create<SyncState>((set, get) => {
       
       // 更新 syncManager 的配置
       const state = get();
-      if (state.userId && state.deviceId && state.token) {
+      if (state.deviceId && state.token) {
         await syncManager.initialize({
           enabled: false,
           lastSyncTime: state.lastSyncTime || 0,
           deviceId: state.deviceId,
-          userId: state.userId,
           token: state.token,
         });
       }
@@ -350,14 +342,18 @@ export const useSyncStore = create<SyncState>((set, get) => {
       }
       
       // 确保 syncManager 已初始化
-      if (!syncManager.isConfigured() && state.userId && state.deviceId && state.token) {
+      if (!syncManager.isConfigured() && state.deviceId && state.token) {
         console.log(`${LOG_PREFIX} syncManager 未配置，正在初始化...`);
         try {
+          // 确保 apiClient 已设置 token
+          if (!apiClient.getToken()) {
+            apiClient.setToken(state.token);
+          }
+          
           await syncManager.initialize({
             enabled: state.enabled,
             lastSyncTime: state.lastSyncTime || 0,
             deviceId: state.deviceId,
-            userId: state.userId,
             token: state.token,
           });
         } catch (error) {

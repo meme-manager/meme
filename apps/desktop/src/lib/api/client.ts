@@ -76,6 +76,35 @@ export class ApiClient {
   }
 
   /**
+   * 从 Token 中提取 device_id
+   */
+  getDeviceIdFromToken(): string | null {
+    if (!this.token) {
+      return null;
+    }
+    
+    try {
+      // JWT 格式：header.payload.signature
+      const parts = this.token.split('.');
+      if (parts.length !== 3) {
+        console.error(`${LOG_PREFIX} Token 格式错误`);
+        return null;
+      }
+      
+      // 解码 payload (base64url)
+      const payload = parts[1];
+      const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+      const data = JSON.parse(decoded);
+      
+      console.log(`${LOG_PREFIX} 从 Token 解析出 device_id: ${data.device_id}`);
+      return data.device_id || null;
+    } catch (error) {
+      console.error(`${LOG_PREFIX} 解析 Token 失败:`, error);
+      return null;
+    }
+  }
+
+  /**
    * 发送 HTTP 请求
    */
   private async request<T>(

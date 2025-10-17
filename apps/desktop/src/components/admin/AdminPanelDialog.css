@@ -1,0 +1,349 @@
+.admin-panel {
+  padding: 20px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+/* 提示框 */
+.admin-alert {
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.admin-alert-success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.admin-alert-error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* 区块 */
+.admin-section {
+  margin-bottom: 24px;
+}
+
+.admin-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.admin-section-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: var(--text-primary);
+}
+
+.admin-section-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.admin-subsection {
+  margin-bottom: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.admin-subsection:last-child {
+  border-bottom: none;
+}
+
+/* 标签页 */
+.admin-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 0;
+}
+
+.admin-tab {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+  margin-bottom: -2px;
+}
+
+.admin-tab:hover {
+  color: var(--text-primary);
+  background: var(--hover-bg);
+}
+
+.admin-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+.admin-logout-btn {
+  margin-left: auto;
+  color: var(--danger);
+}
+
+.admin-logout-btn:hover {
+  background: var(--danger-light);
+}
+
+/* 表单 */
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.admin-input {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: all 0.2s;
+}
+
+.admin-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.admin-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.admin-form-error {
+  color: var(--danger);
+  font-size: 13px;
+  margin: 0;
+}
+
+.admin-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+/* 按钮 */
+.admin-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 140px;
+  white-space: nowrap;
+  line-height: 1.5;
+  overflow: visible;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+.admin-btn * {
+  flex-shrink: 0;
+  color: inherit !important;
+}
+
+/* 确保按钮文本节点也继承颜色 */
+.admin-btn-primary,
+.admin-btn-primary * {
+  color: #ffffff !important;
+}
+
+.admin-btn-secondary,
+.admin-btn-secondary * {
+  color: #1e293b !important;
+}
+
+[data-theme="dark"] .admin-btn-secondary,
+[data-theme="dark"] .admin-btn-secondary * {
+  color: #f1f5f9 !important;
+}
+
+.admin-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(30%);
+}
+
+/* 确保禁用状态下文字仍然可见 */
+.admin-btn-primary:disabled {
+  background: #94a3b8 !important;
+  color: #ffffff !important;
+}
+
+.admin-btn-secondary:disabled {
+  background: #f1f5f9 !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .admin-btn-secondary:disabled {
+  background: #1e293b !important;
+  color: #64748b !important;
+}
+
+.admin-btn-primary {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+.admin-btn-primary:hover:not(:disabled) {
+  background: #2563eb !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.admin-btn-secondary {
+  background: #f1f5f9;
+  color: #1e293b !important;
+  border: 1px solid #e2e8f0;
+}
+
+.admin-btn-secondary:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+/* 深色模式 */
+[data-theme="dark"] .admin-btn-secondary {
+  background: #334155;
+  color: #f1f5f9 !important;
+  border-color: #475569;
+}
+
+[data-theme="dark"] .admin-btn-secondary:hover:not(:disabled) {
+  background: #475569;
+}
+
+.admin-btn-small {
+  padding: 6px 12px;
+  font-size: 13px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-btn-small:hover:not(:disabled) {
+  background: var(--hover-bg);
+}
+
+.admin-btn-small:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 提示文本 */
+.admin-hint {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.admin-hint code {
+  background: var(--bg-tertiary);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 12px;
+}
+
+/* 统计卡片 */
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.admin-stat-card {
+  padding: 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.admin-stat-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.admin-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+.admin-stat-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* 空状态 */
+.admin-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-tertiary);
+  font-size: 14px;
+}
+
+/* 深色模式适配 */
+[data-theme="dark"] .admin-alert-success {
+  background: rgba(16, 87, 34, 0.3);
+  color: #a3e6b8;
+  border-color: rgba(16, 87, 34, 0.5);
+}
+
+[data-theme="dark"] .admin-alert-error {
+  background: rgba(114, 28, 36, 0.3);
+  color: #f8b4bb;
+  border-color: rgba(114, 28, 36, 0.5);
+}
+
+[data-theme="dark"] .admin-input {
+  background: var(--bg-primary);
+}
+
+[data-theme="dark"] .admin-stat-card {
+  background: var(--bg-primary);
+}

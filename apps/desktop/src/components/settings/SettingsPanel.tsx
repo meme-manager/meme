@@ -7,6 +7,7 @@ import { StatsPanel } from '../stats/StatsPanel';
 import { ExportDialog } from '../export/ExportDialog';
 import { CloudSyncSettingsInline } from './CloudSyncSettingsInline';
 import { ConsistencyCheckDialog } from '../consistency/ConsistencyCheckDialog';
+import { AdminPanelDialog } from '../admin';
 import './SettingsPanel.css';
 
 interface SettingsPanelProps {
@@ -21,6 +22,7 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
   const [showStats, setShowStats] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showConsistencyCheck, setShowConsistencyCheck] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
 
   return (
     <>
@@ -120,6 +122,21 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
               </div>
               <span className="settings-link-arrow">›</span>
             </button>
+            
+            <button 
+              className="settings-link-btn"
+              onClick={() => {
+                onClose();
+                setShowAdminPanel(true);
+              }}
+            >
+              <span className="settings-link-icon">🛡️</span>
+              <div className="settings-link-info">
+                <div className="settings-link-label">管理员面板</div>
+                <div className="settings-link-desc">管理服务器配置和安全设置</div>
+              </div>
+              <span className="settings-link-arrow">›</span>
+            </button>
           </div>
         </div>
       </Dialog>
@@ -139,6 +156,11 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
         assetIds={assets.map(a => a.id)}
         assetPaths={assets.map(a => a.file_path)}
         onClose={() => setShowExport(false)}
+      />
+      
+      <AdminPanelDialog
+        open={showAdminPanel}
+        onClose={() => setShowAdminPanel(false)}
       />
     </>
   );

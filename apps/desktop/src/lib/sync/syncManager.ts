@@ -27,7 +27,6 @@ interface SyncConfig {
   enabled: boolean;
   lastSyncTime: number;
   deviceId: string;
-  userId: string;
   token: string;
 }
 
@@ -46,7 +45,7 @@ export class SyncManager {
    * 初始化同步配置
    */
   async initialize(config: SyncConfig): Promise<void> {
-    console.log(`${LOG_PREFIX} 配置同步,用户: ${config.userId}, enabled: ${config.enabled}`);
+    console.log(`${LOG_PREFIX} 配置同步,设备: ${config.deviceId}, enabled: ${config.enabled}`);
     console.log(`${LOG_PREFIX} 🔑 设置 Token: ${config.token ? `${config.token.substring(0, 20)}...` : '❌ 无'}`);
     this.config = config;
     apiClient.setToken(config.token);
@@ -348,12 +347,12 @@ export class SyncManager {
   }
 
   /**
-   * 合并设置
+   * 合并设置（全局设置）
    */
-  private async mergeSetting(setting: { user_id: string; key: string; value: string; updated_at: number }): Promise<void> {
+  private async mergeSetting(setting: { key: string; value: string; updated_at: number; description?: string }): Promise<void> {
     try {
       // 暂时使用 localStorage 存储设置
-      const key = `user_setting_${setting.key}`;
+      const key = `global_setting_${setting.key}`;
       const existingValue = localStorage.getItem(key);
       
       if (existingValue) {
@@ -466,8 +465,8 @@ export class SyncManager {
         'SELECT asset_id, tag_id, created_at FROM asset_tags ORDER BY created_at ASC'
       );
       
-      // TODO: 设置同步需要实现用户设置的存储和查询
-      const settings: Array<{ user_id: string; key: string; value: string; updated_at: number }> = [];
+      // TODO: 设置同步需要实现全局设置的存储和查询
+      const settings: Array<{ key: string; value: string; updated_at: number; description?: string }> = [];
 
       console.log(`${LOG_PREFIX} 需要推送: ${assetsToPush.length} 个资产, ${tagsToPush.length} 个标签, ${asset_tags.length} 个关联`);
 
@@ -490,10 +489,9 @@ export class SyncManager {
   }
 
   /**
-   * 转换资产为同步格式（添加 user_id，并将 undefined 转为 null）
+   * 转换资产为同步格式（将 undefined 转为 null）
    */
   private convertAssetsForSync(assets: Asset[]): any[] {
-    const userId = this.config!.userId;
     return assets.map((asset, index) => {
       // 检查并记录所有 undefined 字段
       const undefinedFields: string[] = [];
@@ -508,7 +506,7 @@ export class SyncManager {
       }
       
       // 将所有 undefined 值转换为 null（D1 不接受 undefined）
-      const converted: any = { user_id: userId };
+      const converted: any = {};
       
       for (const [key, value] of Object.entries(asset)) {
         converted[key] = value === undefined ? null : value;

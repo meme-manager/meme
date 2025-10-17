@@ -14,7 +14,7 @@ export function CloudSyncSettingsInline() {
     lastSyncSuccess,
     error,
     isAuthenticated,
-    userId,
+    deviceId,
     quota,
     initialize,
     login,
@@ -27,8 +27,8 @@ export function CloudSyncSettingsInline() {
   } = useSyncStore();
 
   const [deviceName, setDeviceName] = useState('');
+  const [syncPassword, setSyncPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [apiUrl, setApiUrl] = useState(import.meta.env.VITE_API_BASE_URL || 'http://localhost:8787');
 
   // 初始化
@@ -80,6 +80,11 @@ export function CloudSyncSettingsInline() {
       return;
     }
 
+    if (!syncPassword.trim()) {
+      setError('请输入同步密码');
+      return;
+    }
+
     if (!apiUrl.trim()) {
       setError('请输入服务器地址');
       return;
@@ -96,10 +101,14 @@ export function CloudSyncSettingsInline() {
       // 保存 API 地址到 localStorage（登录前保存，以便 login 函数能获取到）
       localStorage.setItem('sync_api_url', apiUrl.trim());
       
-      // 登录
-      const deviceInfo = getDeviceInfo();
+      // 登录（包含同步密码）
+      const deviceInfo = {
+        ...getDeviceInfo(),
+        sync_password: syncPassword.trim()
+      };
       await login(deviceInfo);
       setDeviceName('');
+      setSyncPassword('');
     } catch (error) {
       console.error('登录失败:', error);
     } finally {
@@ -120,7 +129,7 @@ export function CloudSyncSettingsInline() {
     console.log('[CloudSyncInline] 当前状态:', {
       enabled,
       isAuthenticated,
-      userId,
+      deviceId,
       syncing
     });
     
@@ -190,16 +199,7 @@ export function CloudSyncSettingsInline() {
         <div className="sync-login-form">
           {/* 服务器地址 */}
           <div className="sync-form-group">
-            <label className="sync-label">
-              服务器地址
-              <button
-                type="button"
-                className="sync-link-button"
-                onClick={() => setShowAdvanced(!showAdvanced)}
-              >
-                {showAdvanced ? '▼' : '▶'} 高级选项
-              </button>
-            </label>
+            <label className="sync-label">服务器地址</label>
             <input
               type="text"
               className="sync-input"
@@ -228,10 +228,28 @@ export function CloudSyncSettingsInline() {
             </p>
           </div>
 
+          {/* 同步密码 */}
+          <div className="sync-form-group">
+            <label className="sync-label">
+              同步密码 <span style={{ color: '#e74c3c' }}>*</span>
+            </label>
+            <input
+              type="password"
+              className="sync-input"
+              placeholder="输入管理员设置的同步密码"
+              value={syncPassword}
+              onChange={(e) => setSyncPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+            />
+            <p className="sync-hint">
+              💡 如何获取: 设置 → 管理员面板 → 安全 → 设置同步密码
+            </p>
+          </div>
+
           <button
             className="sync-button sync-button-primary"
             onClick={handleLogin}
-            disabled={isLoggingIn || !deviceName.trim() || !apiUrl.trim()}
+            disabled={isLoggingIn || !deviceName.trim() || !syncPassword.trim() || !apiUrl.trim()}
           >
             {isLoggingIn ? '🔄 登录中...' : '🚀 登录并启用云同步'}
           </button>
@@ -349,8 +367,8 @@ export function CloudSyncSettingsInline() {
           <span className="sync-info-value">{apiUrl}</span>
         </div>
         <div className="sync-info-row">
-          <span className="sync-info-label">👤 用户ID:</span>
-          <span className="sync-info-value">{userId?.slice(0, 8)}...</span>
+          <span className="sync-info-label">📱 设备ID:</span>
+          <span className="sync-info-value">{deviceId?.slice(0, 8)}...</span>
         </div>
       </div>
 

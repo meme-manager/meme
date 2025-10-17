@@ -16,9 +16,9 @@
   background: var(--bg-primary);
   border-radius: 12px;
   box-shadow: var(--shadow-lg);
-  max-width: 500px;
+  max-width: 700px;
   width: 90%;
-  max-height: 80vh;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
   animation: slideUp 0.3s;
