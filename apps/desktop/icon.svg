@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="50%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#0EA5E9"/>
+    </linearGradient>
+    <linearGradient id="bubbleGrad" x1="240" y1="300" x2="784" y2="700" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.98"/>
+      <stop offset="100%" stop-color="#F8FAFC" stop-opacity="1"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="24" flood-color="#000000" flood-opacity="0.16"/>
+    </filter>
+    <!-- 卡片与单元格阴影：用于去线条化分隔 -->
+    <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#000000" flood-opacity="0.08"/>
+    </filter>
+    <filter id="cellShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <!-- 圆角背景 -->
+  <rect x="40" y="40" width="944" height="944" rx="220" fill="url(#bgGrad)"/>
+
+  <!-- 对话气泡 -->
+  <g filter="url(#softShadow)">
+    <path d="M260 300h504c50 0 90 40 90 90v206c0 50-40 90-90 90H500l-120 88c-16 12-38-1-35-21l12-67H260c-50 0-90-40-90-90V390c0-50 40-90 90-90z" fill="url(#bubbleGrad)"/>
+  </g>
+
+  <!-- 3x2 圆角卡片（去线条化：用投影分隔） -->
+  <g transform="translate(320,380)">
+    <!-- 基底卡片，无描边，轻投影 -->
+    <rect x="0" y="0" width="384" height="240" rx="28" fill="#ffffff" filter="url(#cardShadow)"/>
+
+    <!-- 六个单元卡片：柔和分隔，不使用网格线 -->
+    <g>
+      <!-- 第一行 -->
+      <rect x="16" y="16" width="112" height="64" rx="14" fill="#F9FAFB" filter="url(#cellShadow)"/>
+      <rect x="136" y="16" width="112" height="64" rx="14" fill="#F9FAFB" filter="url(#cellShadow)"/>
+      <rect x="256" y="16" width="112" height="64" rx="14" fill="#F9FAFB" filter="url(#cellShadow)"/>
+      <!-- 第二行 -->
+      <rect x="16" y="96" width="112" height="64" rx="14" fill="#F9FAFB" filter="url(#cellShadow)"/>
+      <rect x="136" y="96" width="112" height="64" rx="14" fill="#F9FAFB" filter="url(#cellShadow)"/>
+      <rect x="256" y="96" width="112" height="64" rx="14" fill="#F9FAFB" filter="url(#cellShadow)"/>
+    </g>
+
+    <!-- 表情 1：微笑（位于左上单元中央） -->
+    <g transform="translate(72,48)">
+      <circle cx="0" cy="0" r="22" fill="#FFE08A"/>
+      <circle cx="-8" cy="-6" r="3.5" fill="#1F2937"/>
+      <circle cx="8" cy="-6" r="3.5" fill="#1F2937"/>
+      <path d="M -10 4 Q 0 14 10 4" stroke="#1F2937" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </g>
+
+    <!-- 表情 2：大笑（位于中下单元中央） -->
+    <g transform="translate(192,128)">
+      <circle cx="0" cy="0" r="22" fill="#A7F3D0"/>
+      <path d="M -8 -5 q 3 -6 8 0" stroke="#1F2937" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M 8 -5 q -3 -6 -8 0" stroke="#1F2937" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M -12 4 Q 0 18 12 4" fill="#EF4444" stroke="#1F2937" stroke-width="3"/>
+    </g>
+
+    <!-- 表情 3：眨眼（位于右下单元中央） -->
+    <g transform="translate(312,128)">
+      <circle cx="0" cy="0" r="22" fill="#BFDBFE"/>
+      <rect x="-12" y="-7" width="8" height="3" rx="2" fill="#1F2937"/>
+      <circle cx="8" cy="-6" r="3.5" fill="#1F2937"/>
+      <path d="M -10 6 Q 0 16 10 6" stroke="#1F2937" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- 星光点缀 -->
+  <g>
+    <path d="M820 340l16 40 40 16-40 16-16 40-16-40-40-16 40-16 16-40z" fill="#FDE047"/>
+    <path d="M740 280l10 24 24 10-24 10-10 24-10-24-24-10 24-10 10-24z" fill="#F59E0B"/>
+  </g>
+
+  <!-- 高光弧 -->
+  <path d="M160 210c100-120 260-190 360-190s230 40 330 150c8 9 8 22-1 30-9 8-22 8-30-1C740 140 642 104 520 104c-124 0-252 52-330 158-6 10-19 13-29 7-10-6-13-19-7-29z" fill="#FFFFFF" opacity="0.16"/>
+</svg>
