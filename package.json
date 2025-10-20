@@ -8,32 +8,17 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "pnpm --parallel --filter \"./apps/*\" dev",
-    "build": "pnpm --recursive --filter \"./packages/*\" build && pnpm --recursive --filter \"./apps/*\" build",
+    "dev": "cd apps/desktop && pnpm dev",
+    "build": "cd apps/desktop && pnpm build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "type-check": "pnpm --recursive type-check",
-    "clean": "pnpm --recursive clean",
-    "prepare": "husky",
-    "test": "pnpm --recursive test",
-    "env:init": "node scripts/env-setup.js init",
-    "env:validate": "node scripts/env-setup.js validate",
-    "env:init:dev": "node scripts/env-setup.js init development",
-    "env:init:staging": "node scripts/env-setup.js init staging",
-    "env:init:prod": "node scripts/env-setup.js init production",
-    "deploy": "cd apps/workers && ./deploy.sh",
-    "deploy:staging": "cd apps/workers && pnpm wrangler deploy --env staging",
-    "deploy:prod": "cd apps/workers && pnpm wrangler deploy --env production",
-    "workers:dev": "cd apps/workers && pnpm dev",
-    "workers:deploy": "cd apps/workers && pnpm deploy"
+    "type-check": "cd apps/desktop && pnpm type-check",
+    "clean": "cd apps/desktop && pnpm clean"
   },
   "devDependencies": {
-    "@commitlint/cli": "^19.8.1",
-    "@commitlint/config-conventional": "^19.8.1",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.57.1",
-    "husky": "^9.1.7",
     "prettier": "^3.0.0",
     "typescript": "^5.0.0"
   },

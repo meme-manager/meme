@@ -1,3 +1,0 @@
-#!/usr/bin/env sh
-# 简单的预提交检查，只做基本的类型检查
-# pnpm type-check
